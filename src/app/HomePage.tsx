@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Search, Heart, ShoppingBag, ArrowRight } from "lucide-react"
+import Link from "next/link"
 import Image from "next/image"
 
 // Types
@@ -191,8 +192,9 @@ const FeaturedItems = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {items.map((item) => (
-            <div key={item.id} className="bg-white p-4 rounded-lg shadow hover:shadow-xl transition duration-300">
-              <div className="aspect-[4/5] relative rounded-lg overflow-hidden mb-4">
+            <Link href={`/product/${item.id}`} key={item.id}>
+              <div className="bg-white p-4 rounded-lg shadow hover:shadow-xl transition duration-300">
+                <div className="aspect-[4/5] relative rounded-lg overflow-hidden mb-4">
 <Image
   src={item.image || "/placeholder.svg"}
   alt={item.name}
@@ -200,9 +202,10 @@ const FeaturedItems = () => {
   className="object-cover group-hover:scale-110 transition-transform duration-500"
 />
               </div>
-              <h3 className="font-medium text-lg mb-2">{item.name}</h3>
-              <p className="text-rose-500 font-semibold">{item.price}</p>
-            </div>
+                <h3 className="font-medium text-lg mb-2">{item.name}</h3>
+                <p className="text-rose-500 font-semibold">{item.price}</p>
+              </div>
+            </Link>
           ))}
         </div>
       </div>
