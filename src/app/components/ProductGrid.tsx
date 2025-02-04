@@ -9,10 +9,23 @@ import { useCart } from "../contexts/CartContext"
 interface Product {
   id: string
   name: string
-  image: string | { url: string }[]
   price: number
-  category?: string
-  rating?: number
+  description: string
+  category: string
+  rating: number
+  reviewCount: number
+  stockStatus: string
+  images: {
+    id: string
+    url: string
+    alt: string
+  }[]
+  specifications: {
+    [key: string]: string | undefined
+  }
+  shippingInfo: string
+  sellerName: string
+  sellerRating: number
 }
 
 interface ProductGridProps {
@@ -60,27 +73,25 @@ export default function ProductGrid({
             <Link href={`/product/${product.id}`}>
               <div className="aspect-[4/5] relative rounded-lg overflow-hidden mb-4">
                 <Image
-                  src={Array.isArray(product.image) ? product.image[0].url : (typeof product.image === 'string' ? product.image : "/placeholder.svg")}
-                  alt={product.name}
+                  src={product.images[0]?.url || "/placeholder.svg"}
+                  alt={product.images[0]?.alt || product.name}
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-500"
                 />
               </div>
               <h3 className="font-medium text-lg mb-2 line-clamp-2">{product.name}</h3>
               <div className="flex items-center justify-between">
-                <p className="text-rose-500 font-semibold">${product.price}</p>
-                {product.category && (
-                  <span className="text-sm text-gray-500">{product.category}</span>
-                )}
+                <p className="text-rose-500 font-semibold">${product.price.toFixed(2)}</p>
+                <span className="text-sm text-gray-500">{product.category}</span>
               </div>
-              {product.rating && (
-                <div className="mt-2 flex items-center gap-1">
+              <div className="mt-2 flex items-center justify-between">
+                <div className="flex items-center gap-1">
                   <div className="flex">
                     {[...Array(5)].map((_, i) => (
                       <svg
                         key={i}
                         className={`w-4 h-4 ${
-                          i < Math.floor(product.rating || 0)
+                          i < Math.floor(product.rating)
                             ? "text-yellow-400 fill-current"
                             : "text-gray-300"
                         }`}
@@ -93,7 +104,17 @@ export default function ProductGrid({
                   </div>
                   <span className="text-sm text-gray-500">{product.rating}</span>
                 </div>
-              )}
+                <span className="text-sm text-gray-500">({product.reviewCount})</span>
+              </div>
+              <div className="mt-2">
+                <span className={`text-sm ${
+                  product.stockStatus === "In Stock" 
+                    ? "text-green-600" 
+                    : "text-orange-500"
+                }`}>
+                  {product.stockStatus}
+                </span>
+              </div>
             </Link>
             <AddToCartButton product={product} />
           </div>
@@ -137,7 +158,7 @@ function AddToCartButton({ product }: { product: Product }) {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: Array.isArray(product.image) ? product.image[0].url : product.image
+      image: product.images[0]?.url || "/placeholder.svg"
     })
   }
 

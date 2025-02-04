@@ -1,134 +1,51 @@
-"use client"
-
 import ProductGrid from "../components/ProductGrid"
+import FilterBar from "../components/FilterBar"
+import { headers } from 'next/headers'
+import { ReadonlyURLSearchParams } from 'next/navigation'
 
-// This is temporary mock data - in a real app, this would come from an API
-const products = [
-  {
-    id: "1",
-    name: "Crystal Chandelier",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 299,
-    category: "Lighting",
-    rating: 4.5
-  },
-  {
-    id: "2",
-    name: "Rustic Wooden Arch",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 499,
-    category: "Decorations",
-    rating: 4.8
-  },
-  {
-    id: "3",
-    name: "Elegant Table Decor",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 89,
-    category: "Table Settings",
-    rating: 4.2
-  },
-  {
-    id: "4",
-    name: "Vintage Mirror",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 129,
-    category: "Decorations",
-    rating: 4.6
-  },
-  {
-    id: "5",
-    name: "Floral Backdrop",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 199,
-    category: "Backdrops",
-    rating: 4.7
-  },
-  {
-    id: "6",
-    name: "Modern Centerpiece",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 79,
-    category: "Table Settings",
-    rating: 4.4
-  },
-  {
-    id: "7",
-    name: "String Light Curtain",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 149,
-    category: "Lighting",
-    rating: 4.9
-  },
-  {
-    id: "8",
-    name: "Gold Table Runner",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 39,
-    category: "Table Settings",
-    rating: 4.3
-  },
-  {
-    id: "9",
-    name: "Vintage Candle Holders",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 69,
-    category: "Decorations",
-    rating: 4.6
-  },
-  {
-    id: "10",
-    name: "Rose Gold Photo Frame",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 45,
-    category: "Decorations",
-    rating: 4.5
-  },
-  {
-    id: "11",
-    name: "LED Dance Floor",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 899,
-    category: "Lighting",
-    rating: 4.8
-  },
-  {
-    id: "12",
-    name: "Silk Flower Wall",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 299,
-    category: "Backdrops",
-    rating: 4.7
-  },
-  {
-    id: "13",
-    name: "Crystal Table Numbers",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 29,
-    category: "Table Settings",
-    rating: 4.4
-  },
-  {
-    id: "14",
-    name: "Vintage Easel",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 89,
-    category: "Decorations",
-    rating: 4.3
-  },
-  {
-    id: "15",
-    name: "Fairy Light Curtain",
-    image: "/placeholder.svg?height=500&width=400",
-    price: 129,
-    category: "Lighting",
-    rating: 4.6
+async function getProducts(searchParams?: ReadonlyURLSearchParams) {
+  try {
+    const headersList = await headers()
+    const host = headersList.get('host') || 'localhost:3004'
+    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
+    
+    // Build URL with search params
+    const url = new URL(`${protocol}://${host}/api/products`)
+    if (searchParams) {
+      url.search = searchParams.toString()
+    }
+    
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Accept': 'application/json'
+      },
+      next: {
+        revalidate: 0
+      }
+    })
+    
+    if (!res.ok) {
+      throw new Error(`Failed to fetch products: ${res.statusText}`)
+    }
+    
+    const data = await res.json()
+    return data.products
+  } catch (error) {
+    throw new Error(`Error loading products: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
-]
+}
 
-export default function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: ReadonlyURLSearchParams
+}) {
+  const products = await getProducts(searchParams)
   return (
     <div className="max-w-7xl mx-auto px-8 py-12">
+      <FilterBar />
+      
       <div className="mb-8">
         <h1 className="text-3xl font-semibold mb-4">All Wedding Decor</h1>
         <p className="text-gray-600">
