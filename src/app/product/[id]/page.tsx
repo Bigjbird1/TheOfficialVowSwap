@@ -6,11 +6,23 @@ interface Props {
   }
 }
 
+import { headers } from 'next/headers'
+
 async function getProduct(id: string) {
   try {
-    const res = await fetch(`http://localhost:3002/api/products/${id}`, {
+    const headersList = await headers()
+    const host = headersList.get('host') || 'localhost:3004'
+    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
+    
+    const res = await fetch(`${protocol}://${host}/api/products/${id}`, {
       // Add cache: 'no-store' to prevent caching during development
-      cache: 'no-store'
+      cache: 'no-store',
+      headers: {
+        'Accept': 'application/json'
+      },
+      next: {
+        revalidate: 0
+      }
     })
     
     if (!res.ok) {

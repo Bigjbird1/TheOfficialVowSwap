@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Heart, Share2, ShoppingBag, Star, Truck, Shield, ArrowLeft, ArrowRight } from "lucide-react"
+import { Heart, Share2, ShoppingBag, Star, Truck, Shield, ArrowLeft, ArrowRight, Check } from "lucide-react"
+import { useCart } from "./contexts/CartContext"
 
 interface ProductImage {
   id: number
@@ -34,6 +35,19 @@ interface ProductDetailsPageProps {
 const ProductDetailsPage = ({ id, product }: ProductDetailsPageProps) => {
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
+  const [showAddedNotification, setShowAddedNotification] = useState(false)
+  const { addItem } = useCart()
+
+  const handleAddToCart = () => {
+    addItem({
+      id: id,
+      name: product.name,
+      price: product.price,
+      image: product.images[0].url
+    })
+    setShowAddedNotification(true)
+    setTimeout(() => setShowAddedNotification(false), 2000)
+  }
 
   // Image Gallery Navigation
   const nextImage = () => {
@@ -161,9 +175,23 @@ const ProductDetailsPage = ({ id, product }: ProductDetailsPageProps) => {
                   +
                 </button>
               </div>
-              <button className="flex-1 flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-rose-500 to-purple-600 text-white rounded-full hover:from-rose-600 hover:to-purple-700 transform hover:scale-105 transition duration-300">
-                <ShoppingBag className="w-5 h-5" />
-                Add to Cart
+              <button 
+                onClick={handleAddToCart}
+                disabled={product.stockStatus === "Out of Stock"}
+                className={`flex-1 flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-rose-500 to-purple-600 text-white rounded-full hover:from-rose-600 hover:to-purple-700 transform hover:scale-105 transition duration-300 relative
+                  ${product.stockStatus === "Out of Stock" ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {showAddedNotification ? (
+                  <>
+                    <Check className="w-5 h-5" />
+                    Added to Cart
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-5 h-5" />
+                    Add to Cart
+                  </>
+                )}
               </button>
             </div>
           </div>

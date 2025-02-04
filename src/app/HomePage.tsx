@@ -3,19 +3,13 @@
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import ProductGrid from "./components/ProductGrid"
 
 // Types
 interface Category {
   name: string
   image: string
   count: string
-}
-
-interface Item {
-  id: number
-  name: string
-  image: string
-  price: string
 }
 
 interface Testimonial {
@@ -28,14 +22,14 @@ interface Testimonial {
 const HeroSection = () => {
   return (
     <section className="relative h-[600px]">
-<Image
-  src="/placeholder.svg?height=600&width=1920"
-  alt="Wedding decoration showcase"
-  fill
-  className="object-cover"
-  priority
-  sizes="(max-width: 768px) 100vw, 50vw"
-/>
+      <Image
+        src="/placeholder.svg?height=600&width=1920"
+        alt="Wedding decoration showcase"
+        fill
+        className="object-cover"
+        priority
+        sizes="(max-width: 768px) 100vw, 50vw"
+      />
       <div className="absolute inset-0 bg-black bg-opacity-40">
         <div className="max-w-7xl mx-auto px-8 py-32">
           <div className="max-w-2xl text-white">
@@ -45,9 +39,9 @@ const HeroSection = () => {
               find everything you need in one place.
             </p>
             <div className="flex gap-4">
-              <button aria-label="Shop Now" className="px-8 py-3 bg-rose-500 text-white rounded-full hover:bg-rose-600 transform hover:scale-110 transition duration-300">
+              <Link href="/products" aria-label="Shop Now" className="px-8 py-3 bg-rose-500 text-white rounded-full hover:bg-rose-600 transform hover:scale-110 transition duration-300">
                 Shop Now
-              </button>
+              </Link>
               <button aria-label="Sell Your Items" className="px-8 py-3 bg-white text-gray-900 rounded-full hover:bg-gray-200 transform hover:scale-110 transition duration-300">
                 Sell Your Items
               </button>
@@ -73,9 +67,9 @@ const FeaturedCategories = () => {
       <div className="max-w-7xl mx-auto px-8">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-semibold">Shop by Category</h2>
-          <button className="text-rose-500 hover:text-rose-600 flex items-center gap-2 transition">
+          <Link href="/products" className="text-rose-500 hover:text-rose-600 flex items-center gap-2 transition">
             View All <ArrowRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {categories.map((category) => (
@@ -103,13 +97,13 @@ const FeaturedCategories = () => {
 
 // Featured Items Component
 const FeaturedItems = () => {
-  const items: Item[] = [
-    { id: 1, name: "Crystal Chandelier", image: "/placeholder.svg?height=500&width=400", price: "$299" },
-    { id: 2, name: "Rustic Wooden Arch", image: "/placeholder.svg?height=500&width=400", price: "$499" },
-    { id: 3, name: "Elegant Table Decor", image: "/placeholder.svg?height=500&width=400", price: "$89" },
-    { id: 4, name: "Vintage Mirror", image: "/placeholder.svg?height=500&width=400", price: "$129" },
-    { id: 5, name: "Floral Backdrop", image: "/placeholder.svg?height=500&width=400", price: "$199" },
-    { id: 6, name: "Modern Centerpiece", image: "/placeholder.svg?height=500&width=400", price: "$79" },
+  const items = [
+    { id: "1", name: "Crystal Chandelier", image: "/placeholder.svg?height=500&width=400", price: 299, rating: 4.5 },
+    { id: "2", name: "Rustic Wooden Arch", image: "/placeholder.svg?height=500&width=400", price: 499, rating: 4.8 },
+    { id: "3", name: "Elegant Table Decor", image: "/placeholder.svg?height=500&width=400", price: 89, rating: 4.2 },
+    { id: "4", name: "Vintage Mirror", image: "/placeholder.svg?height=500&width=400", price: 129, rating: 4.6 },
+    { id: "5", name: "Floral Backdrop", image: "/placeholder.svg?height=500&width=400", price: 199, rating: 4.7 },
+    { id: "6", name: "Modern Centerpiece", image: "/placeholder.svg?height=500&width=400", price: 79, rating: 4.4 }
   ]
 
   return (
@@ -117,28 +111,15 @@ const FeaturedItems = () => {
       <div className="max-w-7xl mx-auto px-8">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-semibold">Trending Items</h2>
-          <button className="text-rose-500 hover:text-rose-600 flex items-center gap-2 transition">
+          <Link href="/products" className="text-rose-500 hover:text-rose-600 flex items-center gap-2 transition">
             View All <ArrowRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {items.map((item) => (
-            <Link href={`/product/${item.id}`} key={item.id}>
-              <div className="bg-white p-4 rounded-lg shadow hover:shadow-xl transition duration-300">
-                <div className="aspect-[4/5] relative rounded-lg overflow-hidden mb-4">
-<Image
-  src={item.image || "/placeholder.svg"}
-  alt={item.name}
-  fill
-  className="object-cover group-hover:scale-110 transition-transform duration-500"
-/>
-              </div>
-                <h3 className="font-medium text-lg mb-2">{item.name}</h3>
-                <p className="text-rose-500 font-semibold">{item.price}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <ProductGrid 
+          products={items} 
+          itemsPerPage={6} 
+          showPagination={false}
+        />
       </div>
     </section>
   )
@@ -200,7 +181,7 @@ const NewsletterSignup = () => {
         </p>
         <form className="flex flex-col sm:flex-row justify-center max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
           <label htmlFor="newsletter-email" className="sr-only">Email address</label>
-<input id="newsletter-email"
+          <input id="newsletter-email"
             type="email"
             placeholder="Enter your email"
             className="px-4 py-2 flex-1 rounded-l-full focus:outline-none"

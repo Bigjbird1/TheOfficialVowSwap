@@ -3,9 +3,13 @@
 import { useState } from "react"
 import { Search, Heart, ShoppingBag } from "lucide-react"
 import Link from "next/link"
+import Cart from "./Cart"
+import { useCart } from "../contexts/CartContext"
 
 export default function NavBar() {
   const [activeCategory, setActiveCategory] = useState("all")
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const { items } = useCart()
 
   return (
     <header className="border-b sticky top-0 bg-white z-50">
@@ -42,9 +46,19 @@ export default function NavBar() {
             <button aria-label="Favorites" className="text-gray-600 hover:text-gray-900 transition">
               <Heart className="w-6 h-6" />
             </button>
-            <button aria-label="Shopping Bag" className="text-gray-600 hover:text-gray-900 transition">
+            <button 
+              aria-label="Shopping Bag" 
+              className="text-gray-600 hover:text-gray-900 transition relative"
+              onClick={() => setIsCartOpen(true)}
+            >
               <ShoppingBag className="w-6 h-6" />
+              {items.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {items.length}
+                </span>
+              )}
             </button>
+            <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
             <button aria-label="Start Selling" className="px-6 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition">
               Start Selling
             </button>
