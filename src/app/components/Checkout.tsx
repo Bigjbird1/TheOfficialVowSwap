@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { useCart } from "../contexts/CartContext"
 import { X } from "lucide-react"
+import { orderService } from "../services/OrderService"
+import { useRouter } from "next/navigation"
 
 interface CheckoutProps {
   isOpen: boolean
@@ -28,7 +30,8 @@ interface PaymentInfo {
 }
 
 export default function Checkout({ isOpen, onClose }: CheckoutProps) {
-  const { items, total } = useCart()
+  const { items, total, clearCart } = useCart()
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("shipping")
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     fullName: "",
@@ -58,9 +61,25 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
   }
 
   const handlePlaceOrder = async () => {
-    // TODO: Implement order submission to backend
-    alert("Order placed successfully!")
-    onClose()
+    try {
+      const order = await orderService.createOrder(
+        items,
+        shippingInfo,
+        paymentInfo
+      )
+      
+      // Clear the cart
+      clearCart()
+      
+      // Close the checkout modal
+      onClose()
+      
+      // Redirect to order details page
+      router.push(`/orders/${order.id}`)
+    } catch (error) {
+      console.error('Error placing order:', error)
+      alert('Failed to place order. Please try again.')
+    }
   }
 
   const renderShippingForm = () => (

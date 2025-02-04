@@ -9,7 +9,7 @@ import { useCart } from "../contexts/CartContext"
 interface Product {
   id: string
   name: string
-  image: string
+  image: string | { url: string }[]
   price: number
   category?: string
   rating?: number
@@ -60,7 +60,7 @@ export default function ProductGrid({
             <Link href={`/product/${product.id}`}>
               <div className="aspect-[4/5] relative rounded-lg overflow-hidden mb-4">
                 <Image
-                  src={product.image || "/placeholder.svg"}
+                  src={Array.isArray(product.image) ? product.image[0].url : (typeof product.image === 'string' ? product.image : "/placeholder.svg")}
                   alt={product.name}
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -137,7 +137,7 @@ function AddToCartButton({ product }: { product: Product }) {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.image
+      image: Array.isArray(product.image) ? product.image[0].url : product.image
     })
   }
 

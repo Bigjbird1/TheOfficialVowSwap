@@ -6,13 +6,13 @@ import { Heart, Share2, ShoppingBag, Star, Truck, Shield, ArrowLeft, ArrowRight,
 import { useCart } from "./contexts/CartContext"
 
 interface ProductImage {
-  id: number
+  id: string
   url: string
   alt: string
 }
 
 interface ProductDetails {
-  id: number
+  id: string
   name: string
   price: number
   description: string
@@ -20,7 +20,11 @@ interface ProductDetails {
   rating: number
   reviewCount: number
   stockStatus: "In Stock" | "Low Stock" | "Out of Stock"
-  images: ProductImage[]
+  images: Array<{
+    id: string
+    url: string
+    alt: string
+  }>
   specifications: Record<string, string>
   shippingInfo: string
   sellerName: string

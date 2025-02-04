@@ -12,9 +12,15 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 
-const OrderDetails = () => {
-  // In production, this would fetch data based on order ID from URL/props
+import { Order } from '../services/OrderService'
+
+interface OrderDetailsProps {
+  order: Order
+}
+
+const OrderDetails = ({ order }: OrderDetailsProps) => {
   const orderDetails = {
+    ...order,
     id: 'WDM-2024-001',
     date: '2024-02-01',
     status: 'shipped',

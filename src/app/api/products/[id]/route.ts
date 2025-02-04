@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 // Mock data for demonstration purposes
 const products = [
@@ -33,7 +34,7 @@ const products = [
 ];
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const product = products.find(p => p.id === params.id);
