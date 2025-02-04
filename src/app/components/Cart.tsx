@@ -3,6 +3,8 @@
 import { useCart } from "../contexts/CartContext"
 import { X, Plus, Minus } from "lucide-react"
 import Image from "next/image"
+import { useState } from "react"
+import Checkout from "./Checkout"
 
 interface CartProps {
   isOpen: boolean
@@ -11,6 +13,7 @@ interface CartProps {
 
 export default function Cart({ isOpen, onClose }: CartProps) {
   const { items, removeItem, updateQuantity, total } = useCart()
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
 
   if (!isOpen) return null
 
@@ -85,10 +88,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                 </div>
                 <button
                   className="w-full bg-rose-500 text-white py-3 rounded-full hover:bg-rose-600 transition"
-                  onClick={() => {
-                    // TODO: Implement checkout flow
-                    alert("Proceeding to checkout...")
-                  }}
+                  onClick={() => setIsCheckoutOpen(true)}
                 >
                   Proceed to Checkout
                 </button>
@@ -97,6 +97,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
           )}
         </div>
       </div>
+      <Checkout isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} />
     </div>
   )
 }
