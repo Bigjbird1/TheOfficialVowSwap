@@ -5,6 +5,7 @@ import { X, Plus, Minus } from "lucide-react"
 import Image from "next/image"
 import { useState } from "react"
 import Checkout from "./Checkout"
+import RecommendedProducts from "./RecommendedProducts"
 
 interface CartProps {
   isOpen: boolean
@@ -81,7 +82,17 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                   </div>
                 ))}
               </div>
-              <div className="border-t p-4">
+
+              {/* Recommended Products */}
+              <div className="border-t border-b">
+                <RecommendedProducts 
+                  cartItems={items}
+                  title="Frequently Bought Together"
+                  maxItems={2}
+                />
+              </div>
+
+              <div className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <span className="font-semibold">Total</span>
                   <span className="font-semibold">${total.toFixed(2)}</span>

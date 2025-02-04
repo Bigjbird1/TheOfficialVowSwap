@@ -1,8 +1,43 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// In production, this would query a database
-let orders: any[] = [];
+// Mock data for development
+let orders: any[] = [{
+  id: "WDM-2025-001",
+  date: new Date().toISOString(),
+  status: "processing",
+  items: [
+    {
+      name: "Sample Product",
+      quantity: 1,
+      price: 99.99,
+      image: "/product-image.jpg"
+    }
+  ],
+  subtotal: 99.99,
+  shipping: 35,
+  tax: 8.50,
+  total: 143.49,
+  shippingAddress: {
+    name: "John Doe",
+    street: "123 Main St",
+    city: "New York",
+    state: "NY",
+    zip: "10001"
+  },
+  timeline: [
+    {
+      status: "Order Placed",
+      date: new Date().toLocaleString(),
+      description: "Your order has been confirmed"
+    },
+    {
+      status: "Processing",
+      date: new Date().toLocaleString(),
+      description: "Your order is being processed"
+    }
+  ]
+}];
 
 export async function GET(
   request: NextRequest,

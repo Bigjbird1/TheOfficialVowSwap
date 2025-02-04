@@ -4,6 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import { Heart, Share2, ShoppingBag, Star, Truck, Shield, ArrowLeft, ArrowRight, Check } from "lucide-react"
 import { useCart } from "./contexts/CartContext"
+import RecommendedProducts from "./components/RecommendedProducts"
 
 interface ProductImage {
   id: string
@@ -63,7 +64,7 @@ const ProductDetailsPage = ({ id, product }: ProductDetailsPageProps) => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-8 py-12">
+    <div className="max-w-7xl mx-auto px-8 py-12 space-y-16">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Image Gallery */}
         <div className="space-y-4">
@@ -255,6 +256,13 @@ const ProductDetailsPage = ({ id, product }: ProductDetailsPageProps) => {
           </div>
         </div>
       </div>
+
+      {/* Related Products */}
+      <RecommendedProducts 
+        currentProductId={id}
+        title="Similar Products You Might Like"
+        maxItems={4}
+      />
     </div>
   )
 }
