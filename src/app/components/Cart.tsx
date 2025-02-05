@@ -86,7 +86,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
               {/* Recommended Products */}
               <div className="border-t border-b">
                 <RecommendedProducts 
-                  cartItems={items}
+                  cartItemIds={items.map(item => item.id)}
                   title="Frequently Bought Together"
                   maxItems={2}
                 />

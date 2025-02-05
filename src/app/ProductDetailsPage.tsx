@@ -5,6 +5,7 @@ import Image from "next/image"
 import { Heart, Share2, ShoppingBag, Star, Truck, Shield, ArrowLeft, ArrowRight, Check } from "lucide-react"
 import { useCart } from "./contexts/CartContext"
 import RecommendedProducts from "./components/RecommendedProducts"
+import ItemDetails from "./components/ItemDetails"
 
 interface ProductImage {
   id: string
@@ -112,7 +113,7 @@ const ProductDetailsPage = ({ id, product }: ProductDetailsPageProps) => {
         </div>
 
         {/* Product Details */}
-        <div className="space-y-6">
+        <div className="space-y-6 flex flex-col">
           <div>
             <h1 className="text-3xl font-semibold mb-2">{product.name}</h1>
             <div className="flex items-center gap-4">
@@ -254,6 +255,26 @@ const ProductDetailsPage = ({ id, product }: ProductDetailsPageProps) => {
               </button>
             </div>
           </div>
+
+          {/* Detailed Item Information */}
+          <ItemDetails
+            condition={product.specifications.condition || "Not specified"}
+            measurements={{
+              width: product.specifications.width,
+              height: product.specifications.height,
+              depth: product.specifications.depth,
+              weight: product.specifications.weight
+            }}
+            materials={product.specifications.materials?.split(',').map(m => m.trim()) || []}
+            preservationStatus={
+              product.specifications.preservationStatus ? {
+                status: product.specifications.preservationStatus as "Excellent" | "Good" | "Fair" | "Poor",
+                details: product.specifications.preservationDetails || ""
+              } : undefined
+            }
+            shippingInfo={product.shippingInfo}
+            price={product.price}
+          />
         </div>
       </div>
 

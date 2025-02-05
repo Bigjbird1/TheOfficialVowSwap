@@ -1,19 +1,19 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Product } from "@/app/types"
+import { Product } from "../types"
 import ProductGrid from "./ProductGrid"
 
 interface RecommendedProductsProps {
   currentProductId?: string
-  cartItems?: Product[]
+  cartItemIds?: string[]
   maxItems?: number
   title?: string
 }
 
 export default function RecommendedProducts({ 
   currentProductId,
-  cartItems,
+  cartItemIds,
   maxItems = 4,
   title = "Recommended for You"
 }: RecommendedProductsProps) {
@@ -34,7 +34,8 @@ export default function RecommendedProducts({
           
           // Fetch products in the same category
           const categoryResponse = await fetch(`/api/products?category=${currentProduct.category}&limit=${maxItems + 1}`)
-          let products = await categoryResponse.json()
+          const categoryData = await categoryResponse.json() as { products: Product[] }
+          let products = categoryData.products
           
           // Remove the current product from recommendations if present
           products = products.filter((p: Product) => p.id !== currentProductId)
@@ -43,9 +44,15 @@ export default function RecommendedProducts({
           setRecommendedProducts(products.slice(0, maxItems))
         }
         // If we have cart items, fetch complementary products
-        else if (cartItems?.length) {
-          // Get unique categories from cart items
-          const categories = [...new Set(cartItems.map(item => item.category))]
+        else if (cartItemIds?.length) {
+          // Fetch full product data for cart items to get their categories
+          const cartProductsPromises = cartItemIds.map(id =>
+            fetch(`/api/products/${id}`).then(res => res.json())
+          )
+          const cartProducts = await Promise.all(cartProductsPromises)
+          
+          // Get unique categories from cart products
+          const categories = [...new Set(cartProducts.map(item => item.category))]
           
           // Fetch products from related categories
           const promises = categories.map(category =>
@@ -54,19 +61,20 @@ export default function RecommendedProducts({
           )
           
           const results = await Promise.all(promises)
-          const products = results.flat()
+          const products = results.map(result => result.products).flat()
           
           // Remove products that are already in cart
           const filteredProducts = products.filter(
-            (p: Product) => !cartItems.some(item => item.id === p.id)
+            (p: Product) => !cartItemIds.includes(p.id)
           )
           
           setRecommendedProducts(filteredProducts.slice(0, maxItems))
         }
         // Otherwise fetch trending/popular products
         else {
-          const response = await fetch(`/api/products?sort=rating&limit=${maxItems}`)
-          const products = await response.json()
+          const trendingResponse = await fetch(`/api/products?sort=rating&limit=${maxItems}`)
+          const trendingData = await trendingResponse.json() as { products: Product[] }
+          const products = trendingData.products
           setRecommendedProducts(products)
         }
       } catch (err) {
@@ -78,7 +86,7 @@ export default function RecommendedProducts({
     }
 
     fetchRecommendations()
-  }, [currentProductId, cartItems, maxItems])
+  }, [currentProductId, cartItemIds, maxItems])
 
   if (error) {
     return (

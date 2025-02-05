@@ -11,7 +11,7 @@ import { headers } from 'next/headers'
 async function getProduct(id: string) {
   try {
     const headersList = await headers()
-    const host = headersList.get('host') || 'localhost:3004'
+    const host = headersList.get('host') || 'localhost:3001'
     const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
     
     const res = await fetch(`${protocol}://${host}/api/products/${id}`, {

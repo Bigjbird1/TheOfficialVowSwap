@@ -1,5 +1,5 @@
 import ProductGrid from "../components/ProductGrid"
-import FilterBar from "../components/FilterBar"
+import SearchBar from "../components/SearchBar"
 import { headers } from 'next/headers'
 import { ReadonlyURLSearchParams } from 'next/navigation'
 
@@ -44,7 +44,10 @@ export default async function ProductsPage({
   const products = await getProducts(searchParams)
   return (
     <div className="max-w-7xl mx-auto px-8 py-12">
-      <FilterBar />
+      <SearchBar onSearch={(params) => {
+        // The onSearch callback is handled automatically by the SearchBar component
+        // which uses Next.js router to update the URL with search params
+      }} />
       
       <div className="mb-8">
         <h1 className="text-3xl font-semibold mb-4">All Wedding Decor</h1>
