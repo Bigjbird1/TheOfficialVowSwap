@@ -1,10 +1,50 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Heart, ShoppingBag } from "lucide-react"
+import { Search, Heart, ShoppingBag, User } from "lucide-react"
 import Link from "next/link"
+import { useSession, signOut } from "next-auth/react"
 import Cart from "./Cart"
 import { useCart } from "../contexts/CartContext"
+
+function AuthButtons() {
+  const { data: session } = useSession()
+
+  if (session) {
+    return (
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <User className="w-5 h-5" />
+          <span className="text-sm">{session.user?.name}</span>
+        </div>
+        <button
+          onClick={() => signOut()}
+          className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 transition"
+        >
+          Sign Out
+        </button>
+        <button aria-label="Start Selling" className="px-6 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition">
+          Start Selling
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      <Link href="/auth/signin">
+        <button className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 transition">
+          Sign In
+        </button>
+      </Link>
+      <Link href="/auth/signup">
+        <button className="px-6 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition">
+          Sign Up
+        </button>
+      </Link>
+    </div>
+  )
+}
 
 export default function NavBar() {
   const [activeCategory, setActiveCategory] = useState("all")
@@ -42,7 +82,7 @@ export default function NavBar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6">
             <button aria-label="Favorites" className="text-gray-600 hover:text-gray-900 transition">
               <Heart className="w-6 h-6" />
             </button>
@@ -59,9 +99,7 @@ export default function NavBar() {
               )}
             </button>
             <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-            <button aria-label="Start Selling" className="px-6 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition">
-              Start Selling
-            </button>
+            <AuthButtons />
           </div>
         </div>
 
