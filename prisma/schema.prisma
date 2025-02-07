@@ -29,6 +29,11 @@ model User {
   registry      Registry?
   addresses     Address[]
   paymentMethods PaymentMethod[]
+  // Messaging relationships
+  sentMessages     Message[]        @relation("MessageSender")
+  receivedMessages Message[]        @relation("MessageReceiver")
+  conversationsInitiated Conversation[] @relation("ConversationInitiator")
+  conversationsReceived  Conversation[] @relation("ConversationReceiver")
 }
 
 enum UserRole {
@@ -254,4 +259,45 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  initiatorId String
+  receiverId  String
+  initiator   User      @relation("ConversationInitiator", fields: [initiatorId], references: [id])
+  receiver    User      @relation("ConversationReceiver", fields: [receiverId], references: [id])
+  messages    Message[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastMessageAt DateTime @default(now())
+  status      ConversationStatus @default(ACTIVE)
+
+  @@index([initiatorId])
+  @@index([receiverId])
+}
+
+model Message {
+  id             String    @id @default(cuid())
+  conversationId String
+  senderId       String
+  receiverId     String
+  content        String    @db.Text
+  sender         User      @relation("MessageSender", fields: [senderId], references: [id])
+  receiver       User      @relation("MessageReceiver", fields: [receiverId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  isRead         Boolean   @default(false)
+  attachmentUrl  String?   // Optional attachment URL
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+enum ConversationStatus {
+  ACTIVE
+  ARCHIVED
+  BLOCKED
 }
