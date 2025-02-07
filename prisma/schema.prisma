@@ -34,6 +34,9 @@ model User {
   receivedMessages Message[]        @relation("MessageReceiver")
   conversationsInitiated Conversation[] @relation("ConversationInitiator")
   conversationsReceived  Conversation[] @relation("ConversationReceiver")
+  // Notification relationships
+  notifications Notification[]
+  notificationPreferences NotificationPreference?
 }
 
 enum UserRole {
@@ -300,4 +303,44 @@ enum ConversationStatus {
   ACTIVE
   ARCHIVED
   BLOCKED
+}
+
+// Notification Models
+model Notification {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  title       String
+  message     String
+  link        String?           // Optional link to redirect when clicked
+  isRead      Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model NotificationPreference {
+  id                String    @id @default(cuid())
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailEnabled     Boolean   @default(true)
+  pushEnabled      Boolean   @default(true)
+  inAppEnabled     Boolean   @default(true)
+  // Specific notification type preferences
+  orderUpdates     Boolean   @default(true)
+  messages         Boolean   @default(true)
+  promotions       Boolean   @default(true)
+  systemAlerts     Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+enum NotificationType {
+  ORDER_UPDATE
+  NEW_MESSAGE
+  PROMOTION
+  SYSTEM_ALERT
 }
