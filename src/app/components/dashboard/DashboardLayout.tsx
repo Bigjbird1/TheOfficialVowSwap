@@ -7,18 +7,21 @@ import SavedAddresses from "./SavedAddresses";
 import PaymentMethods from "./PaymentMethods";
 import WishlistItems from "./WishlistItems";
 import RegistryDetails from "./RegistryDetails";
+import DashboardOverview from "./DashboardOverview";
+import { TabConfig } from "@/app/types/dashboard";
 
-const TABS = [
+const TABS: TabConfig[] = [
+  { id: "overview", label: "Overview" },
   { id: "orders", label: "Order History" },
   { id: "addresses", label: "Saved Addresses" },
   { id: "payments", label: "Payment Methods" },
   { id: "wishlist", label: "Wishlist" },
   { id: "registry", label: "Wedding Registry" },
-] as const;
+];
 
 export default function DashboardLayout() {
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState<typeof TABS[number]["id"]>("orders");
+  const [activeTab, setActiveTab] = useState<TabConfig["id"]>("overview");
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -31,6 +34,7 @@ export default function DashboardLayout() {
             {TABS.map((tab) => (
               <li key={tab.id}>
                 <button
+                  data-tab={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full text-left px-4 py-2 rounded-md transition-colors ${
                     activeTab === tab.id
@@ -47,6 +51,7 @@ export default function DashboardLayout() {
 
         {/* Main Content Area */}
         <main className="flex-1 bg-white rounded-lg shadow p-6">
+          {activeTab === "overview" && <DashboardOverview />}
           {activeTab === "orders" && <OrderHistory />}
           {activeTab === "addresses" && <SavedAddresses />}
           {activeTab === "payments" && <PaymentMethods />}

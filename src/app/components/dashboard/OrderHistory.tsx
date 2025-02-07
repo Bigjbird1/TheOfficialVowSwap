@@ -1,50 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-
-interface Order {
-  id: string;
-  createdAt: string;
-  status: string;
-  total: number;
-  items: {
-    id: string;
-    name: string;
-    quantity: number;
-    price: number;
-  }[];
-}
+import { useState, useEffect } from "react";
+import { OrderHistoryProps } from "@/app/types/dashboard";
+import { formatDistance } from "date-fns";
 
 export default function OrderHistory() {
-  const { data: session } = useSession();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<OrderHistoryProps["orders"]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchOrders() {
+    const fetchOrders = async () => {
       try {
         const response = await fetch("/api/orders");
-        if (!response.ok) throw new Error("Failed to fetch orders");
-        const data = await response.json();
-        setOrders(data);
+        const orders = await response.json();
+        setData(orders);
       } catch (error) {
-        console.error("Error fetching orders:", error);
+        console.error("Failed to fetch orders:", error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
-    }
+    };
 
-    if (session) {
-      fetchOrders();
-    }
-  }, [session]);
+    fetchOrders();
+  }, []);
 
-  if (loading) {
-    return <div className="animate-pulse">Loading orders...</div>;
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="h-24 bg-gray-200 rounded-lg"></div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
-  if (orders.length === 0) {
+  if (!data.length) {
     return (
       <div className="text-center py-8">
         <h3 className="text-lg font-medium text-gray-900">No orders yet</h3>
@@ -57,47 +49,64 @@ export default function OrderHistory() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Order History</h2>
+      <h2 className="text-2xl font-semibold">Order History</h2>
+      
       <div className="space-y-4">
-        {orders.map((order) => (
+        {data.map((order) => (
           <div
             key={order.id}
-            className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+            className="bg-white rounded-lg border border-gray-200 overflow-hidden"
           >
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="font-medium">Order #{order.id}</p>
-                <p className="text-sm text-gray-500">
-                  {new Date(order.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <span
-                className={`px-2 py-1 text-sm rounded-full ${
-                  order.status === "completed"
-                    ? "bg-green-100 text-green-800"
-                    : order.status === "processing"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {order.status}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {order.items.map((item) => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span>
-                    {item.name} (x{item.quantity})
-                  </span>
-                  <span className="font-medium">
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </span>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-medium">
+                    Order #{order.id.slice(-6)}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {formatDistance(new Date(order.createdAt), new Date(), {
+                      addSuffix: true,
+                    })}
+                  </p>
                 </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t flex justify-between">
-              <span className="font-medium">Total</span>
-              <span className="font-medium">${order.total.toFixed(2)}</span>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm ${
+                    order.status === "DELIVERED"
+                      ? "bg-green-100 text-green-800"
+                      : order.status === "PROCESSING"
+                      ? "bg-blue-100 text-blue-800"
+                      : order.status === "SHIPPED"
+                      ? "bg-purple-100 text-purple-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {order.status}
+                </span>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <div className="flex justify-between text-sm">
+                  <div>
+                    <p className="font-medium">Shipping Address</p>
+                    <p className="text-gray-500">{order.shippingAddress}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">Total Amount</p>
+                    <p className="text-gray-500">
+                      ${order.totalAmount.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {order.trackingNumber && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-sm">
+                    <span className="font-medium">Tracking Number: </span>
+                    {order.trackingNumber}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         ))}
