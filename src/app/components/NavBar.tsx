@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Search, Heart, ShoppingBag, User } from "lucide-react"
 import Link from "next/link"
 import { useSession, signOut } from "next-auth/react"
 import Cart from "./Cart"
 import { useCart } from "../contexts/CartContext"
+import { useDebounce } from "../hooks/useDebounce"
 
 function AuthButtons() {
   const { data: session } = useSession()
@@ -23,9 +24,12 @@ function AuthButtons() {
         >
           Sign Out
         </button>
-        <button aria-label="Start Selling" className="px-6 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition">
+        <Link 
+          href="/sell" 
+          className="px-6 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+        >
           Start Selling
-        </button>
+        </Link>
       </div>
     )
   }
@@ -47,9 +51,26 @@ function AuthButtons() {
 }
 
 export default function NavBar() {
+  // State management for navigation and cart
   const [activeCategory, setActiveCategory] = useState("all")
   const [isCartOpen, setIsCartOpen] = useState(false)
   const { items } = useCart()
+
+  // Search functionality with debouncing
+  const [searchQuery, setSearchQuery] = useState("")
+  const debouncedSearch = useDebounce(searchQuery, 300)
+
+  // Handle search input changes
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }, [])
+
+  // Handle search submission
+  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault()
+    // TODO: Implement search functionality
+    console.log("Searching for:", debouncedSearch)
+  }, [debouncedSearch])
 
   return (
     <header className="border-b sticky top-0 bg-white z-50">
@@ -62,13 +83,14 @@ export default function NavBar() {
           </Link>
 
           <div className="flex-1 mx-12">
-            <div className="relative">
+            <form role="search" onSubmit={handleSearchSubmit} className="relative">
               <input
-                type="text"
+                type="search"
                 placeholder="Search wedding decor items..."
                 aria-label="Search wedding decor items"
                 className="w-full pl-12 pr-4 py-3 border rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
-                role="searchbox"
+                value={searchQuery}
+                onChange={handleSearchChange}
                 list="search-suggestions"
               />
               <datalist id="search-suggestions">
@@ -79,16 +101,19 @@ export default function NavBar() {
                 <option value="Vintage Accessories" />
               </datalist>
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            </div>
+            </form>
           </div>
 
           <div className="flex items-center gap-6">
-            <button aria-label="Favorites" className="text-gray-600 hover:text-gray-900 transition">
+            <button 
+              aria-label="Favorites" 
+              className="text-gray-600 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded-full p-1"
+            >
               <Heart className="w-6 h-6" />
             </button>
             <button 
               aria-label="Shopping Bag" 
-              className="text-gray-600 hover:text-gray-900 transition relative"
+              className="text-gray-600 hover:text-gray-900 transition relative focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded-full p-1"
               onClick={() => setIsCartOpen(true)}
             >
               <ShoppingBag className="w-6 h-6" />
@@ -108,7 +133,7 @@ export default function NavBar() {
             <button
               key={category}
               onClick={() => setActiveCategory(category.toLowerCase())}
-              className={`text-gray-600 hover:text-gray-900 transition whitespace-nowrap ${
+              className={`text-gray-600 hover:text-gray-900 transition whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded px-2 ${
                 activeCategory === category.toLowerCase() ? "border-b-2 border-rose-500 font-semibold" : ""
               }`}
             >
