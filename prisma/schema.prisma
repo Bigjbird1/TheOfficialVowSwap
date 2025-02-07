@@ -39,6 +39,9 @@ model User {
   notificationPreferences NotificationPreference?
   // Promotion relationships
   usedCoupons   UsedCoupon[]
+  // Bulk Purchase relationships
+  bulkPurchaseRequests BulkPurchaseRequest[] @relation("BuyerRequests")
+  bulkPurchaseResponses BulkPurchaseResponse[] @relation("SellerResponses")
 }
 
 enum UserRole {
@@ -73,6 +76,7 @@ model Seller {
   totalSales      Int       @default(0)
   isVerified      Boolean   @default(false)
   promotions      Promotion[]
+  bulkPurchaseRequests BulkPurchaseRequest[] @relation("SellerRequests")
 }
 
 model Product {
@@ -101,6 +105,64 @@ model Product {
   wishlistItems   WishlistItem[]
   registryItems   RegistryItem[]
   flashSales      FlashSale[]    @relation("FlashSaleProducts")
+  bulkPurchaseRequests BulkPurchaseRequest[] @relation("ProductRequests")
+}
+
+// Bulk Purchase Models
+model BulkPurchaseRequest {
+  id              String    @id @default(cuid())
+  buyerId         String
+  buyer           User      @relation("BuyerRequests", fields: [buyerId], references: [id])
+  sellerId        String
+  seller          Seller    @relation("SellerRequests", fields: [sellerId], references: [id])
+  productId       String
+  product         Product   @relation("ProductRequests", fields: [productId], references: [id])
+  quantity        Int
+  requirements    String?   @db.Text
+  status          BulkRequestStatus @default(PENDING)
+  notes           String?   @db.Text
+  contactEmail    String
+  contactPhone    String?
+  responses       BulkPurchaseResponse[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model BulkPurchaseResponse {
+  id              String    @id @default(cuid())
+  requestId       String
+  request         BulkPurchaseRequest @relation(fields: [requestId], references: [id])
+  sellerId        String
+  seller          User      @relation("SellerResponses", fields: [sellerId], references: [id])
+  customPrice     Float
+  estimatedDelivery DateTime
+  notes           String?   @db.Text
+  status          BulkResponseStatus @default(PENDING)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([requestId])
+  @@index([status])
+}
+
+enum BulkRequestStatus {
+  PENDING
+  RESPONDED
+  ACCEPTED
+  DECLINED
+  COMPLETED
+  CANCELLED
+}
+
+enum BulkResponseStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
 }
 
 // Promotion Models
@@ -448,6 +510,7 @@ model NotificationPreference {
   messages         Boolean   @default(true)
   promotions       Boolean   @default(true)
   systemAlerts     Boolean   @default(true)
+  bulkRequests     Boolean   @default(true)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
@@ -457,4 +520,7 @@ enum NotificationType {
   NEW_MESSAGE
   PROMOTION
   SYSTEM_ALERT
+  BULK_REQUEST_NEW
+  BULK_REQUEST_RESPONSE
+  BULK_REQUEST_STATUS_UPDATE
 }
