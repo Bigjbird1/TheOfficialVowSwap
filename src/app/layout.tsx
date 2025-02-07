@@ -3,6 +3,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "./components/NavBar";
+import Breadcrumbs from "./components/Breadcrumbs";
 import { CartProvider } from "./contexts/CartContext";
 import { Providers } from "./providers";
 
@@ -29,6 +30,7 @@ export default function RootLayout({
         <Providers>
           <CartProvider>
             <NavBar />
+            <Breadcrumbs />
             {children}
           </CartProvider>
         </Providers>
