@@ -1,62 +1,57 @@
-'use client';
+import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import {
+  LoyaltyReward,
+  RewardType,
+  LoyaltyTier,
+  RedeemRewardResponse,
+} from '@/app/types/loyalty';
+import { Card } from '@/app/components/ui/card';
 
-import { useState, useEffect } from 'react';
-import { LoyaltyReward, RedeemedReward, RewardType } from '@/app/types/loyalty';
-import { GiftIcon, TagIcon, TruckIcon, CreditCardIcon } from '@heroicons/react/24/outline';
-import { toast } from 'react-hot-toast';
-
-interface RewardsCatalogProps {
-  userId: string;
+interface RewardCatalogData {
+  rewards: LoyaltyReward[];
+  userPoints: number;
+  userTier: LoyaltyTier;
 }
 
-export default function RewardsCatalog({ userId }: RewardsCatalogProps) {
-  const [rewards, setRewards] = useState<{
-    availableRewards: LoyaltyReward[];
-    activeRewards: RedeemedReward[];
-    userPoints: number;
-    userTier: string;
-  } | null>(null);
+export default function RewardsCatalog() {
+  const { data: session } = useSession();
+  const [catalogData, setCatalogData] = useState<RewardCatalogData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [redeeming, setRedeeming] = useState<string | null>(null);
-  const [selectedTier, setSelectedTier] = useState<string | 'all'>('all');
 
   useEffect(() => {
-    fetchRewards();
-  }, []);
+    const fetchCatalogData = async () => {
+      try {
+        // Fetch rewards
+        const rewardsRes = await fetch('/api/loyalty/rewards');
+        const rewardsData = await rewardsRes.json();
 
-  const fetchRewards = async () => {
-    try {
-      const [rewardsResponse, pointsResponse] = await Promise.all([
-        fetch('/api/loyalty/rewards'),
-        fetch('/api/loyalty')
-      ]);
+        // Fetch user's loyalty points
+        const pointsRes = await fetch('/api/loyalty');
+        const pointsData = await pointsRes.json();
 
-      if (!rewardsResponse.ok || !pointsResponse.ok) {
-        throw new Error('Failed to fetch rewards data');
+        if (rewardsData.success && pointsData.success) {
+          setCatalogData({
+            rewards: rewardsData.data,
+            userPoints: pointsData.data.points.points,
+            userTier: pointsData.data.points.tier,
+          });
+        } else {
+          setError('Failed to fetch rewards data');
+        }
+      } catch (err) {
+        setError('An error occurred while fetching data');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const [rewardsData, pointsData] = await Promise.all([
-        rewardsResponse.json(),
-        pointsResponse.json()
-      ]);
-
-      if (!rewardsData.success || !pointsData.success) {
-        throw new Error('Failed to load rewards data');
-      }
-
-      setRewards({
-        availableRewards: rewardsData.data.availableRewards,
-        activeRewards: rewardsData.data.activeRewards,
-        userPoints: pointsData.data.points.points,
-        userTier: pointsData.data.points.tier
-      });
-    } catch (error) {
-      console.error('Error fetching rewards:', error);
-      toast.error('Failed to load rewards');
-    } finally {
-      setLoading(false);
+    if (session) {
+      fetchCatalogData();
     }
-  };
+  }, [session]);
 
   const redeemReward = async (rewardId: string) => {
     try {
@@ -69,224 +64,122 @@ export default function RewardsCatalog({ userId }: RewardsCatalogProps) {
         body: JSON.stringify({ rewardId }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to redeem reward');
-      }
+      const data: RedeemRewardResponse = await response.json();
 
-      const result = await response.json();
-      toast.success('Reward redeemed successfully!');
-      fetchRewards(); // Refresh rewards list
-    } catch (error) {
-      console.error('Error redeeming reward:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to redeem reward');
+      if (data.success && data.data) {
+        // Update local state with new points balance
+        setCatalogData((prev) => 
+          prev ? { ...prev, userPoints: data.data!.remainingPoints } : null
+        );
+        // You might want to show a success toast here
+      } else {
+        setError(data.error || 'Failed to redeem reward');
+      }
+    } catch (err) {
+      setError('An error occurred while redeeming the reward');
     } finally {
       setRedeeming(null);
     }
   };
 
-  const getRewardIcon = (type: RewardType) => {
-    switch (type) {
-      case RewardType.PERCENTAGE_DISCOUNT:
-        return <TagIcon className="h-6 w-6" />;
-      case RewardType.FIXED_DISCOUNT:
-        return <CreditCardIcon className="h-6 w-6" />;
-      case RewardType.FREE_SHIPPING:
-        return <TruckIcon className="h-6 w-6" />;
-      case RewardType.GIFT_CARD:
-        return <GiftIcon className="h-6 w-6" />;
-    }
-  };
-
-  const formatRewardValue = (reward: LoyaltyReward) => {
+  const getRewardDescription = (reward: LoyaltyReward) => {
     switch (reward.type) {
       case RewardType.PERCENTAGE_DISCOUNT:
-        return `${reward.value}% off`;
+        return `${reward.value}% discount on your next purchase`;
       case RewardType.FIXED_DISCOUNT:
-      case RewardType.GIFT_CARD:
-        return `$${reward.value}`;
+        return `$${reward.value} off your next purchase`;
       case RewardType.FREE_SHIPPING:
-        return 'Free Shipping';
+        return 'Free shipping on your next order';
+      case RewardType.GIFT_CARD:
+        return `$${reward.value} gift card`;
       default:
-        return reward.value.toString();
+        return reward.description;
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (!rewards) {
+  if (error) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <p className="text-gray-500">Failed to load rewards</p>
+      <div className="p-4 text-red-500 bg-red-50 rounded-lg">
+        {error}
       </div>
     );
   }
 
-  const tierOrder = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'];
-  
-  const canRedeemReward = (reward: LoyaltyReward) => {
-    if (!rewards) return false;
-    return (
-      rewards.userPoints >= reward.pointsCost &&
-      tierOrder.indexOf(rewards.userTier) >= tierOrder.indexOf(reward.minTier)
-    );
-  };
-
-  const filteredRewards = rewards?.availableRewards.filter(reward => 
-    selectedTier === 'all' || reward.minTier === selectedTier
-  ) || [];
+  if (!catalogData) {
+    return null;
+  }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* User Points and Tier */}
-      {rewards && (
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold">Your Points Balance</h3>
-              <p className="text-2xl font-bold text-primary">{rewards.userPoints} pts</p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold">Current Tier</h3>
-              <p className="text-2xl font-bold text-primary">{rewards.userTier}</p>
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">Available Rewards</h2>
+        <div className="text-lg">
+          Your Points: <span className="font-bold">{catalogData.userPoints}</span>
         </div>
-      )}
-
-      {/* Tier Filter */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setSelectedTier('all')}
-          className={`px-4 py-2 rounded-md ${
-            selectedTier === 'all'
-              ? 'bg-primary text-white'
-              : 'bg-gray-100 hover:bg-gray-200'
-          }`}
-        >
-          All Tiers
-        </button>
-        {tierOrder.map((tier) => (
-          <button
-            key={tier}
-            onClick={() => setSelectedTier(tier)}
-            className={`px-4 py-2 rounded-md ${
-              selectedTier === tier
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 hover:bg-gray-200'
-            }`}
-          >
-            {tier}
-          </button>
-        ))}
       </div>
-      {/* Active Rewards */}
-      {rewards.activeRewards.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Your Active Rewards</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {rewards.activeRewards.map((redeemedReward) => (
-              <div
-                key={redeemedReward.id}
-                className="bg-white rounded-lg shadow-md p-6 border-2 border-primary"
-              >
-                <div className="flex items-start justify-between">
-                  {(() => {
-                    const reward = rewards.availableRewards.find(r => r.id === redeemedReward.rewardId);
-                    if (!reward) return null;
-                    return (
-                      <div className="flex items-center gap-3">
-                        <div className="text-primary">
-                          {getRewardIcon(reward.type)}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{reward.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            {formatRewardValue(reward)}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  {redeemedReward.expiresAt && (
-                    <span className="text-sm text-gray-500">
-                      Expires {new Date(redeemedReward.expiresAt).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Available Rewards */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Available Rewards</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredRewards.map((reward) => (
-            <div
-              key={reward.id}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="text-primary">
-                    {getRewardIcon(reward.type)}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{reward.name}</h3>
-                    <p className="text-sm text-gray-600">
-                      {formatRewardValue(reward)}
-                    </p>
-                  </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {catalogData.rewards.map((reward) => (
+          <Card key={reward.id} className="p-6">
+            <div className="flex flex-col h-full">
+              <h3 className="text-xl font-semibold mb-2">{reward.name}</h3>
+              <p className="text-gray-600 mb-4">{getRewardDescription(reward)}</p>
+              <div className="mt-auto space-y-4">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Cost:</span>
+                  <span className="font-semibold">{reward.pointsCost} points</span>
                 </div>
-                <span className="font-semibold text-primary">
-                  {reward.pointsCost} pts
-                </span>
-              </div>
-              
-              <p className="text-sm text-gray-600 mb-4">
-                {reward.description}
-              </p>
-
-              <div className="flex flex-col justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    Required Tier: <span className="font-semibold">{reward.minTier}</span>
-                  </p>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Required Tier:</span>
+                  <span className="font-semibold">{reward.minTier}</span>
                 </div>
-                
                 <button
                   onClick={() => redeemReward(reward.id)}
-                  disabled={redeeming === reward.id || !canRedeemReward(reward)}
-                  className={`w-full py-2 px-4 rounded-md text-white transition-colors ${
+                  disabled={
+                    catalogData.userPoints < reward.pointsCost ||
+                    catalogData.userTier < reward.minTier ||
                     redeeming === reward.id
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : canRedeemReward(reward)
-                      ? 'bg-primary hover:bg-primary/90'
-                      : 'bg-gray-300 cursor-not-allowed'
-                  }`}
-                >
-                  {redeeming === reward.id 
-                    ? 'Redeeming...' 
-                    : !canRedeemReward(reward) && rewards?.userPoints < reward.pointsCost
-                    ? `Need ${reward.pointsCost - rewards.userPoints} more points`
-                    : !canRedeemReward(reward)
-                    ? `Requires ${reward.minTier} Tier`
-                    : 'Redeem Reward'
                   }
+                  className={`w-full py-2 px-4 rounded-lg text-white transition-colors
+                    ${
+                      catalogData.userPoints >= reward.pointsCost &&
+                      catalogData.userTier >= reward.minTier
+                        ? 'bg-primary hover:bg-primary/90'
+                        : 'bg-gray-400 cursor-not-allowed'
+                    }
+                  `}
+                >
+                  {redeeming === reward.id ? (
+                    <span className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
+                      Redeeming...
+                    </span>
+                  ) : (
+                    'Redeem Reward'
+                  )}
                 </button>
+                {catalogData.userPoints < reward.pointsCost && (
+                  <p className="text-sm text-red-500">
+                    You need {reward.pointsCost - catalogData.userPoints} more points
+                  </p>
+                )}
+                {catalogData.userTier < reward.minTier && (
+                  <p className="text-sm text-red-500">
+                    Requires {reward.minTier} tier
+                  </p>
+                )}
               </div>
             </div>
-          ))}
-        </div>
+          </Card>
+        ))}
       </div>
     </div>
   );

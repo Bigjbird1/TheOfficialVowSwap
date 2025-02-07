@@ -1,36 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
+import { ReferralLinkResponse } from '@/app/types/loyalty';
 import { nanoid } from 'nanoid';
-import { ReferralStatus } from '@/app/types/loyalty';
 
-// Generate or retrieve a referral link for the current user
-export async function GET() {
+// Generate or retrieve referral link for authenticated user
+export async function GET(
+  req: NextRequest
+): Promise<NextResponse<ReferralLinkResponse>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    // Get user from session
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { referralLink: true }
+      include: {
+        referralLink: {
+          include: {
+            referrals: true,
+          },
+        },
+      },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { success: false, error: 'User not found' },
         { status: 404 }
       );
     }
 
-    // Return existing referral link if it exists
+    // If user already has a referral link, return it
     if (user.referralLink) {
-      return NextResponse.json({ data: user.referralLink });
+      return NextResponse.json({
+        success: true,
+        data: user.referralLink,
+      });
     }
 
     // Generate new referral link
@@ -38,54 +50,60 @@ export async function GET() {
       data: {
         userId: user.id,
         code: nanoid(8), // Generate 8-character unique code
-      }
+      },
+      include: {
+        referrals: true,
+      },
     });
 
-    return NextResponse.json({ data: referralLink });
+    return NextResponse.json({
+      success: true,
+      data: referralLink,
+    });
   } catch (error) {
-    console.error('Error in GET /api/referrals:', error);
+    console.error('Error in referrals GET:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-// Track referral link clicks and validate referral codes
-export async function POST(request: NextRequest) {
+// Track referral click
+export async function POST(
+  req: NextRequest
+): Promise<NextResponse<ReferralLinkResponse>> {
   try {
-    const { code } = await request.json();
+    const { code } = await req.json();
 
     if (!code) {
       return NextResponse.json(
-        { error: 'Referral code is required' },
+        { success: false, error: 'Referral code is required' },
         { status: 400 }
       );
     }
 
+    // Find and update referral link click count
     const referralLink = await prisma.referralLink.update({
       where: { code },
-      data: { clickCount: { increment: 1 } },
-      include: { user: true }
+      data: {
+        clickCount: {
+          increment: 1,
+        },
+      },
+      include: {
+        referrals: true,
+      },
     });
 
-    if (!referralLink) {
-      return NextResponse.json(
-        { error: 'Invalid referral code' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ 
-      data: {
-        referrerId: referralLink.userId,
-        code: referralLink.code
-      }
+    return NextResponse.json({
+      success: true,
+      data: referralLink,
     });
   } catch (error) {
-    console.error('Error in POST /api/referrals:', error);
+    console.error('Error in referrals POST:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

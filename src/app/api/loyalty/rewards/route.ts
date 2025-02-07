@@ -1,198 +1,165 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
+import { authOptions } from '../../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
-import { LoyaltyTransactionType, RewardStatus } from '@/app/types/loyalty';
+import { RedeemRewardRequest, RedeemRewardResponse, RewardStatus } from '@/app/types/loyalty';
 
-export async function POST(request: NextRequest) {
+// Get all available rewards
+export async function GET(
+  req: NextRequest
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { rewardId } = await request.json();
+    const rewards = await prisma.loyaltyReward.findMany({
+      where: {
+        isActive: true,
+      },
+      include: {
+        redemptions: {
+          where: {
+            status: RewardStatus.ACTIVE,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: rewards,
+    });
+  } catch (error) {
+    console.error('Error in rewards GET:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// Redeem a reward
+export async function POST(
+  req: NextRequest
+): Promise<NextResponse<RedeemRewardResponse>> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { rewardId }: RedeemRewardRequest = await req.json();
 
     if (!rewardId) {
       return NextResponse.json(
-        { error: 'Reward ID is required' },
+        { success: false, error: 'Reward ID is required' },
         { status: 400 }
       );
     }
 
+    // Get user and their loyalty points
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { loyaltyPoints: true }
+      include: {
+        loyaltyPoints: true,
+      },
     });
 
-    if (!user) {
+    if (!user || !user.loyaltyPoints) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { success: false, error: 'User loyalty points not found' },
         { status: 404 }
       );
     }
 
+    // Get the reward
     const reward = await prisma.loyaltyReward.findUnique({
-      where: { id: rewardId }
+      where: { id: rewardId },
     });
 
     if (!reward) {
       return NextResponse.json(
-        { error: 'Reward not found' },
+        { success: false, error: 'Reward not found' },
         { status: 404 }
       );
     }
 
+    // Validate reward is active and user has enough points
     if (!reward.isActive) {
       return NextResponse.json(
-        { error: 'This reward is no longer available' },
+        { success: false, error: 'This reward is no longer available' },
         { status: 400 }
-      );
-    }
-
-    if (!user.loyaltyPoints) {
-      return NextResponse.json(
-        { error: 'No loyalty points record found' },
-        { status: 404 }
       );
     }
 
     if (user.loyaltyPoints.points < reward.pointsCost) {
       return NextResponse.json(
-        { error: 'Insufficient points' },
+        { success: false, error: 'Insufficient points' },
         { status: 400 }
       );
     }
 
-    // Start a transaction to redeem the reward
-    const result = await prisma.$transaction(async (tx: PrismaClient) => {
-      // Create redeemed reward record
+    // Validate user's tier meets minimum requirement
+    if (user.loyaltyPoints.tier < reward.minTier) {
+      return NextResponse.json(
+        { success: false, error: 'Your loyalty tier is not high enough for this reward' },
+        { status: 400 }
+      );
+    }
+
+    // Create redemption and update points in a transaction
+    const result = await prisma.$transaction(async (tx: typeof prisma) => {
+      // Create the redemption
       const redeemedReward = await tx.redeemedReward.create({
         data: {
           userId: user.id,
           rewardId: reward.id,
           pointsSpent: reward.pointsCost,
           status: RewardStatus.ACTIVE,
-          expiresAt: reward.type === 'PERCENTAGE_DISCOUNT' || reward.type === 'FIXED_DISCOUNT'
-            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days expiry for discounts
-            : null
-        }
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days expiry
+        },
       });
 
-      // Create loyalty transaction record
-      const transaction = await tx.loyaltyTransaction.create({
-        data: {
-          loyaltyPointsId: user.loyaltyPoints!.id,
-          points: -reward.pointsCost,
-          type: LoyaltyTransactionType.REWARD_REDEMPTION,
-          description: `Redeemed ${reward.name}`
-        }
-      });
-
-      // Update loyalty points
+      // Deduct points and create transaction record
       const updatedPoints = await tx.loyaltyPoints.update({
-        where: { id: user.loyaltyPoints!.id },
+        where: { userId: user.id },
         data: {
-          points: { decrement: reward.pointsCost }
-        }
+          points: {
+            decrement: reward.pointsCost,
+          },
+          transactions: {
+            create: {
+              points: -reward.pointsCost,
+              type: 'REWARD_REDEMPTION',
+              description: `Redeemed ${reward.name}`,
+            },
+          },
+        },
       });
 
-      // Create notification
-      await tx.notification.create({
-        data: {
-          userId: user.id,
-          type: 'REWARD_REDEEMED',
-          title: 'Reward Redeemed Successfully',
-          message: `You have redeemed ${reward.name} for ${reward.pointsCost} points.`
-        }
-      });
-
-      return {
-        redeemedReward,
-        remainingPoints: updatedPoints.points
-      };
-    });
-
-    return NextResponse.json({ data: result });
-  } catch (error) {
-    console.error('Error in POST /api/loyalty/rewards:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-// Get available rewards for the current user
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { 
-        loyaltyPoints: true,
-        redeemedRewards: {
-          include: { reward: true },
-          where: { status: RewardStatus.ACTIVE }
-        }
-      }
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Get all active rewards available for the user's tier
-    const availableRewards = await prisma.loyaltyReward.findMany({
-      where: {
-        isActive: true,
-        minTier: {
-          in: getTiersForUser(user.loyaltyPoints?.tier || 'BRONZE')
-        }
-      }
+      return { redeemedReward, remainingPoints: updatedPoints.points };
     });
 
     return NextResponse.json({
+      success: true,
       data: {
-        availableRewards,
-        activeRewards: user.redeemedRewards
-      }
+        redeemedReward: result.redeemedReward,
+        remainingPoints: result.remainingPoints,
+      },
     });
   } catch (error) {
-    console.error('Error in GET /api/loyalty/rewards:', error);
+    console.error('Error in rewards POST:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
-
-// Helper function to get available tiers for a user
-function getTiersForUser(userTier: string): string[] {
-  const tiers = ['BRONZE'];
-  
-  switch (userTier) {
-    case 'PLATINUM':
-      tiers.push('PLATINUM');
-    case 'GOLD':
-      tiers.push('GOLD');
-    case 'SILVER':
-      tiers.push('SILVER');
-  }
-  
-  return tiers;
 }

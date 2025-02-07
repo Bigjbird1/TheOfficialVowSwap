@@ -1,218 +1,219 @@
-'use client';
+import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import {
+  LoyaltyPoints,
+  LoyaltyTransaction,
+  LoyaltyTier,
+  ReferralLink,
+} from '@/app/types/loyalty';
+import { Card } from '@/app/components/ui/card';
 
-import { useState, useEffect } from 'react';
-import { LoyaltyPoints, LoyaltyTransaction, LoyaltyTier, ReferralLink } from '@/app/types/loyalty';
-import { ClipboardIcon, ShareIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
-import { toast } from 'react-hot-toast';
-
-interface LoyaltyDashboardProps {
-  userId: string;
+interface DashboardData {
+  points: LoyaltyPoints;
+  referralLink?: ReferralLink;
 }
 
-export default function LoyaltyDashboard({ userId }: LoyaltyDashboardProps) {
-  const [loyaltyData, setLoyaltyData] = useState<{
-    points: LoyaltyPoints;
-    referralLink?: ReferralLink;
-  } | null>(null);
+export default function LoyaltyDashboard() {
+  const { data: session } = useSession();
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchLoyaltyData();
-  }, []);
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch loyalty points
+        const pointsRes = await fetch('/api/loyalty');
+        const pointsData = await pointsRes.json();
 
-  const fetchLoyaltyData = async () => {
-    try {
-      const [loyaltyResponse, referralResponse] = await Promise.all([
-        fetch('/api/loyalty'),
-        fetch('/api/referrals')
-      ]);
+        // Fetch referral link
+        const referralRes = await fetch('/api/referrals');
+        const referralData = await referralRes.json();
 
-      if (!loyaltyResponse.ok || !referralResponse.ok) {
-        throw new Error('Failed to fetch loyalty data');
+        if (pointsData.success && referralData.success) {
+          setDashboardData({
+            points: pointsData.data.points,
+            referralLink: referralData.data,
+          });
+        } else {
+          setError('Failed to fetch loyalty data');
+        }
+      } catch (err) {
+        setError('An error occurred while fetching data');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const loyaltyData = await loyaltyResponse.json();
-      const referralData = await referralResponse.json();
-
-      setLoyaltyData({
-        points: loyaltyData.data.points,
-        referralLink: referralData.data
-      });
-    } catch (error) {
-      console.error('Error fetching loyalty data:', error);
-      toast.error('Failed to load loyalty data');
-    } finally {
-      setLoading(false);
+    if (session) {
+      fetchDashboardData();
     }
-  };
+  }, [session]);
 
   const copyReferralLink = async () => {
-    if (!loyaltyData?.referralLink?.code) return;
-    
-    const referralUrl = `${window.location.origin}/signup?ref=${loyaltyData.referralLink.code}`;
-    try {
+    if (dashboardData?.referralLink) {
+      const referralUrl = `${window.location.origin}/signup?ref=${dashboardData.referralLink.code}`;
       await navigator.clipboard.writeText(referralUrl);
-      toast.success('Referral link copied to clipboard!');
-    } catch (error) {
-      console.error('Failed to copy:', error);
-      toast.error('Failed to copy referral link');
+      // You might want to show a toast notification here
     }
-  };
-
-  const shareReferralLink = async () => {
-    if (!loyaltyData?.referralLink?.code) return;
-
-    const referralUrl = `${window.location.origin}/signup?ref=${loyaltyData.referralLink.code}`;
-    try {
-      await navigator.share({
-        title: 'Join me on VowSwap!',
-        text: 'Sign up using my referral link and get exclusive rewards!',
-        url: referralUrl
-      });
-    } catch (error) {
-      console.error('Error sharing:', error);
-      // User probably cancelled sharing, no need to show error
-    }
-  };
-
-  const getTierProgress = (tier: LoyaltyTier, points: number): number => {
-    const nextTierThreshold = {
-      BRONZE: 1000,  // Points needed for Silver
-      SILVER: 5000,  // Points needed for Gold
-      GOLD: 10000,   // Points needed for Platinum
-      PLATINUM: Infinity
-    }[tier];
-
-    const currentTierThreshold = {
-      BRONZE: 0,
-      SILVER: 1000,
-      GOLD: 5000,
-      PLATINUM: 10000
-    }[tier];
-
-    const progress = ((points - currentTierThreshold) / (nextTierThreshold - currentTierThreshold)) * 100;
-    return Math.min(Math.max(progress, 0), 100);
   };
 
   if (loading) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (!loyaltyData) {
+  if (error) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <p className="text-gray-500">Failed to load loyalty data</p>
+      <div className="p-4 text-red-500 bg-red-50 rounded-lg">
+        {error}
       </div>
     );
   }
+
+  if (!dashboardData) {
+    return null;
+  }
+
+  const { points, referralLink } = dashboardData;
+
+  const getTierProgress = () => {
+    const currentPoints = points.lifetimePoints;
+    let nextTier;
+    let pointsNeeded;
+
+    switch (points.tier) {
+      case LoyaltyTier.BRONZE:
+        nextTier = 'Silver';
+        pointsNeeded = 2000 - currentPoints;
+        break;
+      case LoyaltyTier.SILVER:
+        nextTier = 'Gold';
+        pointsNeeded = 5000 - currentPoints;
+        break;
+      case LoyaltyTier.GOLD:
+        nextTier = 'Platinum';
+        pointsNeeded = 10000 - currentPoints;
+        break;
+      default:
+        return null;
+    }
+
+    return { nextTier, pointsNeeded };
+  };
+
+  const tierProgress = getTierProgress();
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Tier Status */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-semibold">
-            {loyaltyData.points.tier.charAt(0) + loyaltyData.points.tier.slice(1).toLowerCase()} Member
-          </h2>
-          <span className="text-3xl font-bold text-primary">
-            {loyaltyData.points.points} pts
-          </span>
+    <div className="space-y-6">
+      {/* Points Overview */}
+      <Card className="p-6">
+        <h2 className="text-2xl font-semibold mb-4">Loyalty Points</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">Current Points</p>
+            <p className="text-3xl font-bold">{points.points}</p>
+          </div>
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">Lifetime Points</p>
+            <p className="text-3xl font-bold">{points.lifetimePoints}</p>
+          </div>
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">Current Tier</p>
+            <p className="text-3xl font-bold">{points.tier}</p>
+          </div>
         </div>
-        
-        {loyaltyData.points.tier !== 'PLATINUM' && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Progress to next tier</span>
-              <span className="font-medium">
-                {getTierProgress(loyaltyData.points.tier, loyaltyData.points.lifetimePoints)}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+
+        {tierProgress && (
+          <div className="mt-6">
+            <p className="text-sm text-gray-600 mb-2">
+              {tierProgress.pointsNeeded} points needed for {tierProgress.nextTier}
+            </p>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div
-                className="bg-primary rounded-full h-2 transition-all duration-500"
+                className="bg-primary h-2.5 rounded-full"
                 style={{
-                  width: `${getTierProgress(
-                    loyaltyData.points.tier,
-                    loyaltyData.points.lifetimePoints
-                  )}%`
+                  width: `${(points.lifetimePoints / getNextTierThreshold(points.tier)) * 100}%`,
                 }}
               ></div>
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Referral Section */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold mb-4">Refer Friends</h3>
-        <p className="text-gray-600 mb-4">
-          Share your referral link with friends and earn rewards when they join!
-        </p>
-        
-        <div className="flex gap-4 mb-6">
-          <button
-            onClick={copyReferralLink}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-          >
-            <ClipboardIcon className="h-5 w-5" />
-            Copy Link
-          </button>
-          
-          {typeof navigator !== 'undefined' && 'share' in navigator && (
-            <button
-              onClick={shareReferralLink}
-              className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-md hover:bg-secondary/90 transition-colors"
-            >
-              <ShareIcon className="h-5 w-5" />
-              Share
-            </button>
-          )}
-        </div>
-
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Total Referrals</span>
-            <span className="font-semibold">
-              {loyaltyData.referralLink?.referrals.length || 0}
-            </span>
+      <Card className="p-6">
+        <h2 className="text-2xl font-semibold mb-4">Referral Program</h2>
+        {referralLink ? (
+          <div>
+            <div className="flex items-center gap-4 mb-4">
+              <input
+                type="text"
+                value={`${window.location.origin}/signup?ref=${referralLink.code}`}
+                readOnly
+                className="flex-1 p-2 border rounded-lg bg-gray-50"
+              />
+              <button
+                onClick={copyReferralLink}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+              >
+                Copy Link
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Total Clicks</p>
+                <p className="text-2xl font-bold">{referralLink.clickCount}</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Successful Referrals</p>
+                <p className="text-2xl font-bold">
+                  {referralLink.referrals.filter(r => r.status === 'COMPLETED').length}
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-sm text-gray-600">Link Clicks</span>
-            <span className="font-semibold">
-              {loyaltyData.referralLink?.clickCount || 0}
-            </span>
-          </div>
-        </div>
-      </div>
+        ) : (
+          <p>Loading referral information...</p>
+        )}
+      </Card>
 
       {/* Recent Transactions */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold mb-4">Recent Activity</h3>
+      <Card className="p-6">
+        <h2 className="text-2xl font-semibold mb-4">Recent Transactions</h2>
         <div className="space-y-4">
-          {loyaltyData.points.transactions.map((transaction: LoyaltyTransaction) => (
+          {points.transactions.slice(0, 5).map((transaction) => (
             <div
               key={transaction.id}
-              className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+              className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
             >
               <div>
                 <p className="font-medium">{transaction.description}</p>
-                <p className="text-sm text-gray-500">
-                  {new Date(transaction.createdAt).toLocaleDateString()}
-                </p>
+                <p className="text-sm text-gray-600">{new Date(transaction.createdAt).toLocaleDateString()}</p>
               </div>
-              <span className={`font-semibold ${
-                transaction.points > 0 ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {transaction.points > 0 ? '+' : ''}{transaction.points} pts
-              </span>
+              <p className={`font-bold ${transaction.points > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {transaction.points > 0 ? '+' : ''}{transaction.points}
+              </p>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
+}
+
+function getNextTierThreshold(currentTier: LoyaltyTier): number {
+  switch (currentTier) {
+    case LoyaltyTier.BRONZE:
+      return 2000;
+    case LoyaltyTier.SILVER:
+      return 5000;
+    case LoyaltyTier.GOLD:
+      return 10000;
+    default:
+      return Infinity;
+  }
 }
