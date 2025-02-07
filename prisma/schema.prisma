@@ -17,37 +17,9 @@ model User {
   password      String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  emailVerified DateTime?
-  image         String?
   role          UserRole  @default(CUSTOMER)
-  accounts      Account[]
-  sessions      Session[]
-  seller        Seller?
-  reviews       Review[]
   orders        Order[]
-  wishlist      Wishlist?
-  registry      Registry?
-  addresses     Address[]
-  paymentMethods PaymentMethod[]
-  // Messaging relationships
-  sentMessages     Message[]        @relation("MessageSender")
-  receivedMessages Message[]        @relation("MessageReceiver")
-  conversationsInitiated Conversation[] @relation("ConversationInitiator")
-  conversationsReceived  Conversation[] @relation("ConversationReceiver")
-  // Notification relationships
-  notifications Notification[]
-  notificationPreferences NotificationPreference?
-  // Promotion relationships
-  usedCoupons   UsedCoupon[]
-  // Bulk Purchase relationships
-  bulkPurchaseRequests BulkPurchaseRequest[] @relation("BuyerRequests")
-  bulkPurchaseResponses BulkPurchaseResponse[] @relation("SellerResponses")
-  // Referral & Loyalty relationships
-  referralLink        ReferralLink?
-  referralsGenerated  ReferralTransaction[] @relation("Referrer")
-  referredBy          ReferralTransaction[] @relation("Referred")
-  loyaltyPoints       LoyaltyPoints?
-  redeemedRewards     RedeemedReward[]
+  seller        Seller?   // Add this relation field
 }
 
 enum UserRole {
@@ -63,200 +35,9 @@ model Seller {
   storeName       String
   description     String?   @db.Text
   contactEmail    String
-  phoneNumber     String?
-  address         String?
-  bannerImage     String?   // URL for the store banner image
-  logoImage       String?   // URL for the store logo
-  themeColor      String?   // Primary color for the storefront
-  accentColor     String?   // Secondary/accent color
-  fontFamily      String?   // Preferred font family
-  layout          Json?     // Store layout preferences
-  socialLinks     Json?     // Social media links
-  businessHours   Json?     // Store hours
-  policies        Json?     // Store policies (shipping, returns, etc.)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  products        Product[]
   orders          Order[]   @relation("SellerOrders")
-  rating          Float     @default(0)
-  totalSales      Int       @default(0)
-  isVerified      Boolean   @default(false)
-  promotions      Promotion[]
-  bulkPurchaseRequests BulkPurchaseRequest[] @relation("SellerRequests")
-}
-
-model Product {
-  id              String         @id @default(cuid())
-  sellerId        String
-  seller          Seller         @relation(fields: [sellerId], references: [id])
-  name            String
-  description     String
-  price           Float
-  categoryId      String
-  category        Category       @relation(fields: [categoryId], references: [id])
-  images          String[]
-  quantity        Int
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  isActive        Boolean        @default(true)
-  reviews         Review[]
-  orderItems      OrderItem[]
-  rating          Float          @default(0)
-  totalSales      Int            @default(0)
-  tags            String[]
-  theme           String?        // Wedding theme (e.g., rustic, modern, vintage)
-  popularity      Int            @default(0)  // Track product views/interactions
-  isNewArrival    Boolean        @default(false)  // Flag for new products
-  bulkDiscounts   BulkDiscount[]
-  wishlistItems   WishlistItem[]
-  registryItems   RegistryItem[]
-  flashSales      FlashSale[]    @relation("FlashSaleProducts")
-  bulkPurchaseRequests BulkPurchaseRequest[] @relation("ProductRequests")
-}
-
-// Bulk Purchase Models
-model BulkPurchaseRequest {
-  id              String    @id @default(cuid())
-  buyerId         String
-  buyer           User      @relation("BuyerRequests", fields: [buyerId], references: [id])
-  sellerId        String
-  seller          Seller    @relation("SellerRequests", fields: [sellerId], references: [id])
-  productId       String
-  product         Product   @relation("ProductRequests", fields: [productId], references: [id])
-  quantity        Int
-  requirements    String?   @db.Text
-  status          BulkRequestStatus @default(PENDING)
-  notes           String?   @db.Text
-  contactEmail    String
-  contactPhone    String?
-  responses       BulkPurchaseResponse[]
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  @@index([buyerId])
-  @@index([sellerId])
-  @@index([status])
-}
-
-model BulkPurchaseResponse {
-  id              String    @id @default(cuid())
-  requestId       String
-  request         BulkPurchaseRequest @relation(fields: [requestId], references: [id])
-  sellerId        String
-  seller          User      @relation("SellerResponses", fields: [sellerId], references: [id])
-  customPrice     Float
-  estimatedDelivery DateTime
-  notes           String?   @db.Text
-  status          BulkResponseStatus @default(PENDING)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  @@index([requestId])
-  @@index([status])
-}
-
-enum BulkRequestStatus {
-  PENDING
-  RESPONDED
-  ACCEPTED
-  DECLINED
-  COMPLETED
-  CANCELLED
-}
-
-enum BulkResponseStatus {
-  PENDING
-  ACCEPTED
-  DECLINED
-  EXPIRED
-}
-
-// Promotion Models
-model Promotion {
-  id              String          @id @default(cuid())
-  sellerId        String
-  seller          Seller          @relation(fields: [sellerId], references: [id])
-  name            String
-  description     String?
-  type            PromotionType
-  startDate       DateTime
-  endDate         DateTime
-  isActive        Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  couponCode      CouponCode?     // For coupon type promotions
-  flashSale       FlashSale?      // For flash sale type promotions
-  bulkDiscount    BulkDiscount?   // For bulk discount type promotions
-}
-
-enum PromotionType {
-  COUPON
-  FLASH_SALE
-  BULK_DISCOUNT
-}
-
-model CouponCode {
-  id              String       @id @default(cuid())
-  promotionId     String       @unique
-  promotion       Promotion    @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  code            String       @unique
-  discountType    DiscountType
-  discountValue   Float        // Percentage or fixed amount
-  minimumPurchase Float?       // Minimum purchase amount required
-  maxUses         Int?         // Maximum number of times the coupon can be used
-  usedCount       Int          @default(0)
-  perUserLimit    Int?         // Maximum times a single user can use this coupon
-  usedCoupons     UsedCoupon[]
-}
-
-model UsedCoupon {
-  id              String      @id @default(cuid())
-  couponId        String
-  coupon          CouponCode  @relation(fields: [couponId], references: [id])
-  userId          String
-  user            User        @relation(fields: [userId], references: [id])
-  usedAt          DateTime    @default(now())
-  orderId         String?     // Optional reference to the order where the coupon was used
-
-  @@unique([couponId, userId, orderId])
-}
-
-enum DiscountType {
-  PERCENTAGE
-  FIXED_AMOUNT
-}
-
-model FlashSale {
-  id              String    @id @default(cuid())
-  promotionId     String    @unique
-  promotion       Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  discountType    DiscountType
-  discountValue   Float
-  categoryId      String?
-  category        Category? @relation(fields: [categoryId], references: [id])
-  products        Product[] @relation("FlashSaleProducts")
-}
-
-model BulkDiscount {
-  id              String    @id @default(cuid())
-  promotionId     String    @unique
-  promotion       Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  productId       String
-  product         Product   @relation(fields: [productId], references: [id])
-  minQuantity     Int
-  discount        Float     // Percentage discount
-  isActive        Boolean   @default(true)
-}
-
-model Category {
-  id          String      @id @default(cuid())
-  name        String      @unique
-  description String?
-  products    Product[]
-  parentId    String?
-  parent      Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[]  @relation("CategoryHierarchy")
-  flashSales  FlashSale[]
 }
 
 model Order {
@@ -271,7 +52,12 @@ model Order {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   shippingAddress String
+  // Shipping tracking fields
   trackingNumber  String?
+  carrier         ShippingCarrier?
+  shippingStatus  ShippingStatus?  @default(PENDING)
+  estimatedDeliveryDate DateTime?
+  shippingEvents ShippingEvent[]
 }
 
 model OrderItem {
@@ -279,128 +65,23 @@ model OrderItem {
   orderId     String
   order       Order    @relation(fields: [orderId], references: [id])
   productId   String
-  product     Product  @relation(fields: [productId], references: [id])
   quantity    Int
   unitPrice   Float
   totalPrice  Float
 }
 
-model Review {
-  id            String         @id @default(cuid())
-  userId        String
-  user          User           @relation(fields: [userId], references: [id])
-  productId     String
-  product       Product        @relation(fields: [productId], references: [id])
-  rating        Int
-  comment       String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  status        ReviewStatus   @default(PENDING)
-  moderatedBy   String?        // Admin/Seller who moderated the review
-  moderatedAt   DateTime?      // When the review was moderated
-  helpfulCount  Int           @default(0)
-  reportCount   Int           @default(0)
-  reports       ReviewReport[]
-  replies       ReviewReply[]
-}
-
-model ReviewReport {
-  id          String   @id @default(cuid())
-  reviewId    String
-  review      Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  userId      String
-  reason      String
-  createdAt   DateTime @default(now())
-}
-
-model ReviewReply {
-  id          String   @id @default(cuid())
-  reviewId    String
-  review      Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  userId      String
-  comment     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-enum ReviewStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-model Wishlist {
-  id        String         @id @default(cuid())
-  userId    String         @unique
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     WishlistItem[]
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-}
-
-model WishlistItem {
-  id         String   @id @default(cuid())
-  wishlistId String
-  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id])
-  addedAt    DateTime @default(now())
-
-  @@unique([wishlistId, productId])
-}
-
-model Registry {
+model ShippingEvent {
   id          String         @id @default(cuid())
-  userId      String         @unique
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title       String
-  eventDate   DateTime
-  description String?
-  isPublic    Boolean        @default(true)
-  shareableLink String       @unique @default(cuid())
-  items       RegistryItem[]
+  orderId     String
+  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status      ShippingStatus
+  location    String
+  description String
+  timestamp   DateTime       @default(now())
   createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-}
 
-model RegistryItem {
-  id          String   @id @default(cuid())
-  registryId  String
-  registry    Registry @relation(fields: [registryId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
-  quantity    Int
-  purchased   Int      @default(0)
-  addedAt     DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  priority    Int      @default(0)  // Higher number = higher priority
-
-  @@unique([registryId, productId])
-}
-
-model Address {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  street      String
-  city        String
-  state       String
-  zipCode     String
-  country     String
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model PaymentMethod {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        String   // e.g., "credit_card", "paypal"
-  lastFour    String?  // Last 4 digits for cards
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  @@index([orderId])
+  @@index([status])
 }
 
 enum OrderStatus {
@@ -411,240 +92,18 @@ enum OrderStatus {
   CANCELLED
 }
 
-model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-model Conversation {
-  id          String    @id @default(cuid())
-  initiatorId String
-  receiverId  String
-  initiator   User      @relation("ConversationInitiator", fields: [initiatorId], references: [id])
-  receiver    User      @relation("ConversationReceiver", fields: [receiverId], references: [id])
-  messages    Message[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  lastMessageAt DateTime @default(now())
-  status      ConversationStatus @default(ACTIVE)
-
-  @@index([initiatorId])
-  @@index([receiverId])
-}
-
-model Message {
-  id             String    @id @default(cuid())
-  conversationId String
-  senderId       String
-  receiverId     String
-  content        String    @db.Text
-  sender         User      @relation("MessageSender", fields: [senderId], references: [id])
-  receiver       User      @relation("MessageReceiver", fields: [receiverId], references: [id])
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  isRead         Boolean   @default(false)
-  attachmentUrl  String?   // Optional attachment URL
-
-  @@index([conversationId])
-  @@index([senderId])
-  @@index([receiverId])
-}
-
-enum ConversationStatus {
-  ACTIVE
-  ARCHIVED
-  BLOCKED
-}
-
-// Notification Models
-model Notification {
-  id          String            @id @default(cuid())
-  userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        NotificationType
-  title       String
-  message     String
-  link        String?           // Optional link to redirect when clicked
-  isRead      Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  @@index([userId])
-  @@index([createdAt])
-}
-
-model NotificationPreference {
-  id                String    @id @default(cuid())
-  userId           String    @unique
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  emailEnabled     Boolean   @default(true)
-  pushEnabled      Boolean   @default(true)
-  inAppEnabled     Boolean   @default(true)
-  // Specific notification type preferences
-  orderUpdates     Boolean   @default(true)
-  messages         Boolean   @default(true)
-  promotions       Boolean   @default(true)
-  systemAlerts     Boolean   @default(true)
-  bulkRequests     Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-}
-
-enum NotificationType {
-  ORDER_UPDATE
-  NEW_MESSAGE
-  PROMOTION
-  SYSTEM_ALERT
-  BULK_REQUEST_NEW
-  BULK_REQUEST_RESPONSE
-  BULK_REQUEST_STATUS_UPDATE
-  REFERRAL_SUCCESSFUL
-  POINTS_EARNED
-  REWARD_REDEEMED
-}
-
-// Referral & Loyalty Models
-model ReferralLink {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  code            String    @unique
-  clickCount      Int       @default(0)
-  referrals       ReferralTransaction[] @relation("ReferralSource")
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-}
-
-model ReferralTransaction {
-  id              String    @id @default(cuid())
-  referrerId      String
-  referrer        User      @relation("Referrer", fields: [referrerId], references: [id])
-  referredId      String
-  referred        User      @relation("Referred", fields: [referredId], references: [id])
-  referralLinkId  String
-  referralLink    ReferralLink @relation("ReferralSource", fields: [referralLinkId], references: [id])
-  status          ReferralStatus @default(PENDING)
-  pointsAwarded   Int?      // Points awarded to referrer
-  createdAt       DateTime  @default(now())
-  completedAt     DateTime?
-
-  @@unique([referrerId, referredId])
-}
-
-enum ReferralStatus {
+enum ShippingStatus {
   PENDING
-  COMPLETED
-  EXPIRED
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  EXCEPTION
 }
 
-model LoyaltyPoints {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  points          Int       @default(0)
-  lifetimePoints  Int       @default(0)
-  tier            LoyaltyTier @default(BRONZE)
-  transactions    LoyaltyTransaction[]
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-}
-
-model LoyaltyTransaction {
-  id              String    @id @default(cuid())
-  loyaltyPointsId String
-  loyaltyPoints   LoyaltyPoints @relation(fields: [loyaltyPointsId], references: [id])
-  points          Int      // Can be positive (earned) or negative (spent)
-  type            LoyaltyTransactionType
-  description     String
-  orderId         String?  // Optional reference to related order
-  createdAt       DateTime @default(now())
-
-  @@index([loyaltyPointsId])
-  @@index([type])
-}
-
-enum LoyaltyTransactionType {
-  PURCHASE
-  REFERRAL
-  REWARD_REDEMPTION
-  ENGAGEMENT
-  BONUS
-}
-
-enum LoyaltyTier {
-  BRONZE
-  SILVER
-  GOLD
-  PLATINUM
-}
-
-model LoyaltyReward {
-  id              String    @id @default(cuid())
-  name            String
-  description     String
-  pointsCost      Int
-  type            RewardType
-  value           Float    // Discount amount or fixed value
-  isActive        Boolean   @default(true)
-  minTier         LoyaltyTier @default(BRONZE)
-  redemptions     RedeemedReward[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model RedeemedReward {
-  id              String    @id @default(cuid())
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  rewardId        String
-  reward          LoyaltyReward @relation(fields: [rewardId], references: [id])
-  pointsSpent     Int
-  status          RewardStatus @default(ACTIVE)
-  expiresAt       DateTime?
-  createdAt       DateTime @default(now())
-  usedAt          DateTime?
-}
-
-enum RewardType {
-  PERCENTAGE_DISCOUNT
-  FIXED_DISCOUNT
-  FREE_SHIPPING
-  GIFT_CARD
-}
-
-enum RewardStatus {
-  ACTIVE
-  USED
-  EXPIRED
+enum ShippingCarrier {
+  USPS
+  UPS
+  FEDEX
+  DHL
 }
