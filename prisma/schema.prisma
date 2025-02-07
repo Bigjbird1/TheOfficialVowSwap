@@ -11,21 +11,83 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  password      String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  role          UserRole  @default(CUSTOMER)
-  orders        Order[]
-  seller        Seller?   // Add this relation field
+  id              String          @id @default(cuid())
+  name            String?
+  email           String          @unique
+  password        String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  role            UserRole        @default(CUSTOMER)
+  orders          Order[]
+  seller          Seller?
+  contentReports  ContentReport[] @relation("ReportedBy")
+  moderationEvents ModerationEvent[] @relation("ModeratedBy")
+  reportedContent ContentReport[] @relation("ReportedContent")
 }
 
 enum UserRole {
   CUSTOMER
   SELLER
   ADMIN
+  MODERATOR
+}
+
+enum ContentType {
+  PRODUCT
+  REVIEW
+  USER_PROFILE
+  SELLER_PROFILE
+  REGISTRY
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum ModerationAction {
+  APPROVE
+  REJECT
+  DELETE
+  FLAG
+  WARN
+  SUSPEND
+}
+
+model ContentReport {
+  id          String       @id @default(cuid())
+  type        ContentType
+  contentId   String
+  reason      String       @db.Text
+  details     String?      @db.Text
+  status      ReportStatus @default(PENDING)
+  reportedBy  User        @relation("ReportedBy", fields: [userId], references: [id])
+  userId      String
+  reportedUser User?      @relation("ReportedContent", fields: [reportedUserId], references: [id])
+  reportedUserId String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  moderationEvents ModerationEvent[] @relation("ReportModeration")
+
+  @@index([type, contentId])
+  @@index([status])
+  @@index([userId])
+}
+
+model ModerationEvent {
+  id            String      @id @default(cuid())
+  action        ModerationAction
+  moderator     User        @relation("ModeratedBy", fields: [moderatorId], references: [id])
+  moderatorId   String
+  report        ContentReport @relation("ReportModeration", fields: [reportId], references: [id])
+  reportId      String
+  notes         String?     @db.Text
+  createdAt     DateTime    @default(now())
+
+  @@index([moderatorId])
+  @@index([reportId])
 }
 
 model Seller {
