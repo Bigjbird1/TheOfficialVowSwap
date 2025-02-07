@@ -50,10 +50,19 @@ model Seller {
   userId          String    @unique
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   storeName       String
-  description     String?
+  description     String?   @db.Text
   contactEmail    String
   phoneNumber     String?
   address         String?
+  bannerImage     String?   // URL for the store banner image
+  logoImage       String?   // URL for the store logo
+  themeColor      String?   // Primary color for the storefront
+  accentColor     String?   // Secondary/accent color
+  fontFamily      String?   // Preferred font family
+  layout          Json?     // Store layout preferences
+  socialLinks     Json?     // Social media links
+  businessHours   Json?     // Store hours
+  policies        Json?     // Store policies (shipping, returns, etc.)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   products        Product[]
