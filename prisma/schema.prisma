@@ -37,6 +37,8 @@ model User {
   // Notification relationships
   notifications Notification[]
   notificationPreferences NotificationPreference?
+  // Promotion relationships
+  usedCoupons   UsedCoupon[]
 }
 
 enum UserRole {
@@ -70,6 +72,7 @@ model Seller {
   rating          Float     @default(0)
   totalSales      Int       @default(0)
   isVerified      Boolean   @default(false)
+  promotions      Promotion[]
 }
 
 model Product {
@@ -93,20 +96,99 @@ model Product {
   tags            String[]
   theme           String?        // Wedding theme (e.g., rustic, modern, vintage)
   popularity      Int            @default(0)  // Track product views/interactions
-  isNewArrival   Boolean        @default(false)  // Flag for new products
+  isNewArrival    Boolean        @default(false)  // Flag for new products
   bulkDiscounts   BulkDiscount[]
   wishlistItems   WishlistItem[]
   registryItems   RegistryItem[]
+  flashSales      FlashSale[]    @relation("FlashSaleProducts")
+}
+
+// Promotion Models
+model Promotion {
+  id              String          @id @default(cuid())
+  sellerId        String
+  seller          Seller          @relation(fields: [sellerId], references: [id])
+  name            String
+  description     String?
+  type            PromotionType
+  startDate       DateTime
+  endDate         DateTime
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  couponCode      CouponCode?     // For coupon type promotions
+  flashSale       FlashSale?      // For flash sale type promotions
+  bulkDiscount    BulkDiscount?   // For bulk discount type promotions
+}
+
+enum PromotionType {
+  COUPON
+  FLASH_SALE
+  BULK_DISCOUNT
+}
+
+model CouponCode {
+  id              String       @id @default(cuid())
+  promotionId     String       @unique
+  promotion       Promotion    @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  code            String       @unique
+  discountType    DiscountType
+  discountValue   Float        // Percentage or fixed amount
+  minimumPurchase Float?       // Minimum purchase amount required
+  maxUses         Int?         // Maximum number of times the coupon can be used
+  usedCount       Int          @default(0)
+  perUserLimit    Int?         // Maximum times a single user can use this coupon
+  usedCoupons     UsedCoupon[]
+}
+
+model UsedCoupon {
+  id              String      @id @default(cuid())
+  couponId        String
+  coupon          CouponCode  @relation(fields: [couponId], references: [id])
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  usedAt          DateTime    @default(now())
+  orderId         String?     // Optional reference to the order where the coupon was used
+
+  @@unique([couponId, userId, orderId])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+model FlashSale {
+  id              String    @id @default(cuid())
+  promotionId     String    @unique
+  promotion       Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  discountType    DiscountType
+  discountValue   Float
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id])
+  products        Product[] @relation("FlashSaleProducts")
+}
+
+model BulkDiscount {
+  id              String    @id @default(cuid())
+  promotionId     String    @unique
+  promotion       Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id])
+  minQuantity     Int
+  discount        Float     // Percentage discount
+  isActive        Boolean   @default(true)
 }
 
 model Category {
-  id          String    @id @default(cuid())
-  name        String    @unique
+  id          String      @id @default(cuid())
+  name        String      @unique
   description String?
   products    Product[]
   parentId    String?
-  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryHierarchy")
+  parent      Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[]  @relation("CategoryHierarchy")
+  flashSales  FlashSale[]
 }
 
 model Order {
@@ -177,15 +259,6 @@ enum ReviewStatus {
   PENDING
   APPROVED
   REJECTED
-}
-
-model BulkDiscount {
-  id          String   @id @default(cuid())
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
-  minQuantity Int
-  discount    Float    // Percentage discount
-  isActive    Boolean  @default(true)
 }
 
 model Wishlist {
