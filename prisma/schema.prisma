@@ -26,6 +26,9 @@ model User {
   reviews       Review[]
   orders        Order[]
   wishlist      Wishlist?
+  registry      Registry?
+  addresses     Address[]
+  paymentMethods PaymentMethod[]
 }
 
 enum UserRole {
@@ -71,8 +74,12 @@ model Product {
   rating          Float          @default(0)
   totalSales      Int            @default(0)
   tags            String[]
+  theme           String?        // Wedding theme (e.g., rustic, modern, vintage)
+  popularity      Int            @default(0)  // Track product views/interactions
+  isNewArrival   Boolean        @default(false)  // Flag for new products
   bulkDiscounts   BulkDiscount[]
   wishlistItems   WishlistItem[]
+  registryItems   RegistryItem[]
 }
 
 model Category {
@@ -150,6 +157,60 @@ model WishlistItem {
   addedAt    DateTime @default(now())
 
   @@unique([wishlistId, productId])
+}
+
+model Registry {
+  id          String         @id @default(cuid())
+  userId      String         @unique
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  eventDate   DateTime
+  description String?
+  isPublic    Boolean        @default(true)
+  shareableLink String       @unique @default(cuid())
+  items       RegistryItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model RegistryItem {
+  id          String   @id @default(cuid())
+  registryId  String
+  registry    Registry @relation(fields: [registryId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int
+  purchased   Int      @default(0)
+  addedAt     DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  priority    Int      @default(0)  // Higher number = higher priority
+
+  @@unique([registryId, productId])
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  street      String
+  city        String
+  state       String
+  zipCode     String
+  country     String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PaymentMethod {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // e.g., "credit_card", "paypal"
+  lastFour    String?  // Last 4 digits for cards
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum OrderStatus {

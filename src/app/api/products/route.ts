@@ -1,193 +1,178 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-interface ProductImage {
-  id: string;
-  url: string;
-  alt: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  category: string;
-  rating: number;
-  reviewCount: number;
-  stockStatus: string;
-  images: ProductImage[];
-  specifications: {
-    "Dimensions"?: string;
-    "Material"?: string;
-    "Style"?: string;
-    "Bulb Type"?: string;
-    "Number of Lights"?: string;
-    "Installation"?: string;
-    "Assembly"?: string;
-    "Weight"?: string;
-    "Finish"?: string;
-    "Table Runner Length"?: string;
-    "Charger Plate Diameter"?: string;
-    "Color"?: string;
-    "Pieces per Set"?: string;
-    [key: string]: string | undefined;
-  };
-  shippingInfo: string;
-  sellerName: string;
-  sellerRating: number;
-}
-
-// Mock data matching the structure used in [id]/route.ts
-const products = [
-  {
-    id: "1",
-    name: "Vintage Crystal Chandelier",
-    price: 299.99,
-    description: "Add elegance to your wedding venue with this stunning vintage-inspired crystal chandelier. Perfect for creating a romantic atmosphere with its warm, sparkling illumination. Each piece is carefully crafted with premium materials.",
-    category: "Lighting",
-    rating: 4.8,
-    reviewCount: 156,
-    stockStatus: "In Stock",
-    images: [
-      { id: "1", url: "/placeholder.svg?height=600&width=600", alt: "Chandelier front view" },
-      { id: "2", url: "/placeholder.svg?height=600&width=600", alt: "Chandelier side view" },
-      { id: "3", url: "/placeholder.svg?height=600&width=600", alt: "Chandelier detail view" },
-      { id: "4", url: "/placeholder.svg?height=600&width=600", alt: "Chandelier in setting" }
-    ],
-    specifications: {
-      "Dimensions": "24\" x 24\" x 28\"",
-      "Material": "Crystal, Metal",
-      "Style": "Vintage",
-      "Bulb Type": "E12 LED Compatible",
-      "Number of Lights": "8",
-      "Installation": "Professional Required"
-    },
-    shippingInfo: "Free shipping on orders over $500. Estimated delivery: 5-7 business days",
-    sellerName: "Elegant Wedding Decor Co.",
-    sellerRating: 4.9
-  },
-  {
-    id: "2",
-    name: "Rustic Wooden Arch",
-    price: 499.99,
-    description: "Create a stunning focal point for your ceremony with this handcrafted wooden arch. Perfect for outdoor or indoor weddings, this versatile piece can be decorated with flowers, fabric, or lights to match your theme.",
-    category: "Decorations",
-    rating: 4.9,
-    reviewCount: 89,
-    stockStatus: "In Stock",
-    images: [
-      { id: "1", url: "/placeholder.svg?height=600&width=600", alt: "Arch front view" },
-      { id: "2", url: "/placeholder.svg?height=600&width=600", alt: "Arch side view" },
-      { id: "3", url: "/placeholder.svg?height=600&width=600", alt: "Arch detail view" },
-      { id: "4", url: "/placeholder.svg?height=600&width=600", alt: "Arch in setting" }
-    ],
-    specifications: {
-      "Dimensions": "80\" x 60\" x 90\"",
-      "Material": "Solid Wood",
-      "Style": "Rustic",
-      "Assembly": "Required",
-      "Weight": "45 lbs",
-      "Finish": "Natural Wood Stain"
-    },
-    shippingInfo: "Free shipping on orders over $500. Estimated delivery: 7-10 business days",
-    sellerName: "Rustic Wedding Essentials",
-    sellerRating: 4.8
-  },
-  {
-    id: "3",
-    name: "Elegant Table Decor Set",
-    price: 89.99,
-    description: "Complete table setting package including premium table runners, charger plates, and coordinated place card holders. Creates a cohesive, sophisticated look for your reception tables.",
-    category: "Table Settings",
-    rating: 4.7,
-    reviewCount: 234,
-    stockStatus: "Low Stock",
-    images: [
-      { id: "1", url: "/placeholder.svg?height=600&width=600", alt: "Table setting front view" },
-      { id: "2", url: "/placeholder.svg?height=600&width=600", alt: "Table setting overhead view" },
-      { id: "3", url: "/placeholder.svg?height=600&width=600", alt: "Place setting detail" },
-      { id: "4", url: "/placeholder.svg?height=600&width=600", alt: "Full table arrangement" }
-    ],
-    specifications: {
-      "Table Runner Length": "108\"",
-      "Charger Plate Diameter": "13\"",
-      "Material": "Mixed Materials",
-      "Style": "Modern Elegant",
-      "Color": "Gold/Ivory",
-      "Pieces per Set": "12"
-    },
-    shippingInfo: "Standard shipping: $12.99. Estimated delivery: 3-5 business days",
-    sellerName: "Luxe Wedding Collections",
-    sellerRating: 4.6
-  }
-];
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { ProductFilters, SortOption } from '@/app/types/filters';
+import prismaClient from '@prisma/client';
+const { Prisma } = prismaClient;
 
 export async function GET(request: NextRequest) {
   try {
-    // Get search params
     const searchParams = request.nextUrl.searchParams;
-    const category = searchParams.get('category');
-    const search = searchParams.get('search')?.toLowerCase().trim();
-    const sort = searchParams.get('sort');
     
-    // Filter products based on category and search term if provided
-    let filteredProducts = [...products];
-    
-    // Only filter by category if it's not "All"
-    if (category && category !== "All") {
-      filteredProducts = filteredProducts.filter(product => 
-        product.category.toLowerCase() === category.toLowerCase()
-      );
-    }
-    
-    // Search in name, description, and category
-    if (search) {
-      const searchTerms = search.split(' ').filter(term => term.length > 0);
-      filteredProducts = filteredProducts.filter(product => {
-        const searchableText = `
-          ${product.name.toLowerCase()} 
-          ${product.description.toLowerCase()} 
-          ${product.category.toLowerCase()}
-        `;
-        return searchTerms.every(term => searchableText.includes(term));
+    // Parse filter parameters
+    const filters: ProductFilters = {
+      categories: searchParams.get('categories')?.split(','),
+      themes: searchParams.get('themes')?.split(','),
+      ratings: searchParams.get('ratings')?.split(',').map(Number),
+      search: searchParams.get('search') || undefined,
+      sortBy: searchParams.get('sortBy') as SortOption,
+      newArrivals: searchParams.get('newArrivals') === 'true',
+      priceRange: searchParams.has('minPrice') && searchParams.has('maxPrice')
+        ? {
+            min: Number(searchParams.get('minPrice')),
+            max: Number(searchParams.get('maxPrice'))
+          }
+        : undefined
+    };
+
+    // Construct where clause based on filters
+    const where: any = {
+      isActive: true,
+      AND: []
+    };
+
+    // Category filter
+    if (filters.categories?.length) {
+      where.AND.push({
+        category: {
+          name: {
+            in: filters.categories
+          }
+        }
       });
     }
-    
-    // Sort products if sort parameter is provided
-    if (sort) {
-      switch (sort) {
-        case 'price-asc':
-          filteredProducts.sort((a, b) => a.price - b.price);
-          break;
-        case 'price-desc':
-          filteredProducts.sort((a, b) => b.price - a.price);
-          break;
-        case 'rating':
-          filteredProducts.sort((a, b) => {
-            // Sort by rating first, then by review count for equal ratings
-            if (b.rating === a.rating) {
-              return b.reviewCount - a.reviewCount;
-            }
-            return b.rating - a.rating;
-          });
-          break;
-      }
+
+    // Theme filter
+    if (filters.themes?.length) {
+      where.AND.push({
+        OR: filters.themes.map(theme => ({
+          theme: theme
+        }))
+      });
     }
 
+    // Rating filter
+    if (filters.ratings?.length) {
+      where.AND.push({
+        rating: {
+          gte: Math.min(...filters.ratings)
+        }
+      });
+    }
+
+    // Price range filter
+    if (filters.priceRange) {
+      where.AND.push({
+        price: {
+          gte: filters.priceRange.min,
+          lte: filters.priceRange.max
+        }
+      });
+    }
+
+    // Search filter
+    if (filters.search) {
+      where.AND.push({
+        OR: [
+          {
+            name: {
+              contains: filters.search,
+              mode: 'insensitive'
+            }
+          },
+          {
+            description: {
+              contains: filters.search,
+              mode: 'insensitive'
+            }
+          },
+          {
+            tags: {
+              has: filters.search
+            }
+          }
+        ]
+      });
+    }
+
+    // New Arrivals filter
+    if (filters.newArrivals) {
+      where.AND.push({
+        isNewArrival: true
+      });
+    }
+
+    // Remove empty AND array if no filters applied
+    if (!where.AND?.length) {
+      delete where.AND;
+    }
+
+    // Construct orderBy based on sort option
+    let orderBy: any = {};
+    switch (filters.sortBy) {
+      case 'price_asc':
+        orderBy = { price: 'asc' };
+        break;
+      case 'price_desc':
+        orderBy = { price: 'desc' };
+        break;
+      case 'popularity':
+        orderBy = { popularity: 'desc' };
+        break;
+      case 'newest':
+        orderBy = { createdAt: 'desc' };
+        break;
+      case 'new_arrivals':
+        orderBy = [
+          { isNewArrival: 'desc' },
+          { createdAt: 'desc' }
+        ];
+        break;
+      default:
+        orderBy = { popularity: 'desc' };
+    }
+
+    // Execute query with pagination
+    const page = Number(searchParams.get('page')) || 1;
+    const limit = Number(searchParams.get('limit')) || 12;
+    const skip = (page - 1) * limit;
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          category: true,
+          seller: {
+            select: {
+              storeName: true,
+              rating: true
+            }
+          },
+          reviews: {
+            select: {
+              rating: true
+            }
+          }
+        }
+      }),
+      prisma.product.count({ where })
+    ]);
+
     return NextResponse.json({
-      products: filteredProducts,
-      total: filteredProducts.length,
-      filters: {
-        category,
-        search,
-        sort
+      products,
+      pagination: {
+        total,
+        pages: Math.ceil(total / limit),
+        currentPage: page,
+        perPage: limit
       }
     });
   } catch (error) {
-    console.error('Error processing products request:', error);
+    console.error('Products API Error:', error);
     return NextResponse.json(
-      { error: 'Failed to process request' },
+      { error: 'Failed to fetch products' },
       { status: 500 }
     );
   }
