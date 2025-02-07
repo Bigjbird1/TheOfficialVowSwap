@@ -42,6 +42,12 @@ model User {
   // Bulk Purchase relationships
   bulkPurchaseRequests BulkPurchaseRequest[] @relation("BuyerRequests")
   bulkPurchaseResponses BulkPurchaseResponse[] @relation("SellerResponses")
+  // Referral & Loyalty relationships
+  referralLink        ReferralLink?
+  referralsGenerated  ReferralTransaction[] @relation("Referrer")
+  referredBy          ReferralTransaction[] @relation("Referred")
+  loyaltyPoints       LoyaltyPoints?
+  redeemedRewards     RedeemedReward[]
 }
 
 enum UserRole {
@@ -523,4 +529,122 @@ enum NotificationType {
   BULK_REQUEST_NEW
   BULK_REQUEST_RESPONSE
   BULK_REQUEST_STATUS_UPDATE
+  REFERRAL_SUCCESSFUL
+  POINTS_EARNED
+  REWARD_REDEEMED
+}
+
+// Referral & Loyalty Models
+model ReferralLink {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code            String    @unique
+  clickCount      Int       @default(0)
+  referrals       ReferralTransaction[] @relation("ReferralSource")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model ReferralTransaction {
+  id              String    @id @default(cuid())
+  referrerId      String
+  referrer        User      @relation("Referrer", fields: [referrerId], references: [id])
+  referredId      String
+  referred        User      @relation("Referred", fields: [referredId], references: [id])
+  referralLinkId  String
+  referralLink    ReferralLink @relation("ReferralSource", fields: [referralLinkId], references: [id])
+  status          ReferralStatus @default(PENDING)
+  pointsAwarded   Int?      // Points awarded to referrer
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  @@unique([referrerId, referredId])
+}
+
+enum ReferralStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+}
+
+model LoyaltyPoints {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  points          Int       @default(0)
+  lifetimePoints  Int       @default(0)
+  tier            LoyaltyTier @default(BRONZE)
+  transactions    LoyaltyTransaction[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model LoyaltyTransaction {
+  id              String    @id @default(cuid())
+  loyaltyPointsId String
+  loyaltyPoints   LoyaltyPoints @relation(fields: [loyaltyPointsId], references: [id])
+  points          Int      // Can be positive (earned) or negative (spent)
+  type            LoyaltyTransactionType
+  description     String
+  orderId         String?  // Optional reference to related order
+  createdAt       DateTime @default(now())
+
+  @@index([loyaltyPointsId])
+  @@index([type])
+}
+
+enum LoyaltyTransactionType {
+  PURCHASE
+  REFERRAL
+  REWARD_REDEMPTION
+  ENGAGEMENT
+  BONUS
+}
+
+enum LoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+model LoyaltyReward {
+  id              String    @id @default(cuid())
+  name            String
+  description     String
+  pointsCost      Int
+  type            RewardType
+  value           Float    // Discount amount or fixed value
+  isActive        Boolean   @default(true)
+  minTier         LoyaltyTier @default(BRONZE)
+  redemptions     RedeemedReward[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model RedeemedReward {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  rewardId        String
+  reward          LoyaltyReward @relation(fields: [rewardId], references: [id])
+  pointsSpent     Int
+  status          RewardStatus @default(ACTIVE)
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+  usedAt          DateTime?
+}
+
+enum RewardType {
+  PERCENTAGE_DISCOUNT
+  FIXED_DISCOUNT
+  FREE_SHIPPING
+  GIFT_CARD
+}
+
+enum RewardStatus {
+  ACTIVE
+  USED
+  EXPIRED
 }
