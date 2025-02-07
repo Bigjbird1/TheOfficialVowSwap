@@ -127,15 +127,47 @@ model OrderItem {
 }
 
 model Review {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  productId     String
+  product       Product        @relation(fields: [productId], references: [id])
+  rating        Int
+  comment       String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  status        ReviewStatus   @default(PENDING)
+  moderatedBy   String?        // Admin/Seller who moderated the review
+  moderatedAt   DateTime?      // When the review was moderated
+  helpfulCount  Int           @default(0)
+  reportCount   Int           @default(0)
+  reports       ReviewReport[]
+  replies       ReviewReply[]
+}
+
+model ReviewReport {
   id          String   @id @default(cuid())
+  reviewId    String
+  review      Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
-  rating      Int
-  comment     String?
+  reason      String
+  createdAt   DateTime @default(now())
+}
+
+model ReviewReply {
+  id          String   @id @default(cuid())
+  reviewId    String
+  review      Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId      String
+  comment     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model BulkDiscount {
