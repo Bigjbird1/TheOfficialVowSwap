@@ -129,16 +129,26 @@ export default function NavBar() {
         </div>
 
         <nav className="flex items-center gap-8 h-12 text-base mt-4 overflow-x-auto">
-          {["All Items", "Decor", "Lighting", "Furniture", "Floral", "Accessories"].map((category) => (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category.toLowerCase())}
-              className={`text-gray-600 hover:text-gray-900 transition whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded px-2 ${
-                activeCategory === category.toLowerCase() ? "border-b-2 border-rose-500 font-semibold" : ""
-              }`}
-            >
-              {category}
-            </button>
+          {["All Items", "Decor", "Lighting", "Furniture", "Floral", "Accessories", "Wedding Services"].map((category) => (
+            category === "Wedding Services" ? (
+              <Link
+                key={category}
+                href="/wedding-services"
+                className="text-gray-600 hover:text-gray-900 transition whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded px-2"
+              >
+                {category}
+              </Link>
+            ) : (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category.toLowerCase())}
+                className={`text-gray-600 hover:text-gray-900 transition whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded px-2 ${
+                  activeCategory === category.toLowerCase() ? "border-b-2 border-rose-500 font-semibold" : ""
+                }`}
+              >
+                {category}
+              </button>
+            )
           ))}
         </nav>
       </div>

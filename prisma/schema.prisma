@@ -11,20 +11,21 @@ datasource db {
 }
 
 model User {
-  id              String          @id @default(cuid())
+  id              String           @id @default(cuid())
   name            String?
-  email           String          @unique
+  email           String           @unique
   password        String
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  role            UserRole        @default(CUSTOMER)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  role            UserRole         @default(CUSTOMER)
   orders          Order[]
   seller          Seller?
-  contentReports  ContentReport[] @relation("ReportedBy")
+  contentReports  ContentReport[]  @relation("ReportedBy")
   moderationEvents ModerationEvent[] @relation("ModeratedBy")
-  reportedContent ContentReport[] @relation("ReportedContent")
+  reportedContent ContentReport[]  @relation("ReportedContent")
   productViews    ProductView[]
   userEngagement  UserEngagement?
+  serviceBookings ServiceBooking[]
 }
 
 enum UserRole {
@@ -109,20 +110,129 @@ model SalesMetric {
 }
 
 model Seller {
-  id              String        @id @default(cuid())
-  userId          String        @unique
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   storeName       String
-  description     String?       @db.Text
+  description     String?          @db.Text
   contactEmail    String
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  orders          Order[]       @relation("SellerOrders")
+  bannerImage     String?
+  logoImage       String?
+  businessHours   Json?            // Store opening hours in JSON format
+  location        String?
+  socialLinks     Json?            // Store social media links in JSON format
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  orders          Order[]          @relation("SellerOrders")
   products        Product[]
   salesMetrics    SalesMetric[]
+  services        WeddingService[]
+  serviceBookings ServiceBooking[]
+  portfolioItems  PortfolioItem[]
+  reviews         ServiceReview[]
 }
 
-// Existing models below...
+model ServiceCategory {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?          @db.Text
+  services    WeddingService[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model WeddingService {
+  id            String          @id @default(cuid())
+  name          String
+  description   String          @db.Text
+  price         Float?          // Null if "Price upon request"
+  priceType     PriceType      @default(FIXED)
+  categoryId    String
+  category      ServiceCategory @relation(fields: [categoryId], references: [id])
+  sellerId      String
+  seller        Seller         @relation(fields: [sellerId], references: [id])
+  images        String[]       // Array of image URLs
+  features      String[]       // Array of service features/inclusions
+  availability  Json?          // Store availability windows in JSON format
+  bookings      ServiceBooking[]
+  reviews       ServiceReview[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  isActive      Boolean        @default(true)
+  listingFee    Float?         // Optional listing fee charged by platform
+  commission    Float?         // Optional commission percentage
+
+  @@index([sellerId])
+  @@index([categoryId])
+}
+
+model ServiceBooking {
+  id          String         @id @default(cuid())
+  serviceId   String
+  service     WeddingService @relation(fields: [serviceId], references: [id])
+  sellerId    String
+  seller      Seller        @relation(fields: [sellerId], references: [id])
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  status      BookingStatus @default(PENDING)
+  date        DateTime
+  startTime   DateTime?
+  endTime     DateTime?
+  notes       String?       @db.Text
+  totalAmount Float
+  deposit     Float?
+  isPaid      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([serviceId])
+  @@index([sellerId])
+  @@index([userId])
+}
+
+model PortfolioItem {
+  id          String   @id @default(cuid())
+  sellerId    String
+  seller      Seller   @relation(fields: [sellerId], references: [id])
+  title       String
+  description String?  @db.Text
+  imageUrl    String
+  date        DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sellerId])
+}
+
+model ServiceReview {
+  id          String         @id @default(cuid())
+  serviceId   String
+  service     WeddingService @relation(fields: [serviceId], references: [id])
+  sellerId    String
+  seller      Seller        @relation(fields: [sellerId], references: [id])
+  rating      Int
+  comment     String?       @db.Text
+  images      String[]      // Array of review image URLs
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([serviceId])
+  @@index([sellerId])
+}
+
+enum PriceType {
+  FIXED
+  HOURLY
+  PACKAGE
+  CUSTOM
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
 
 enum ContentType {
   PRODUCT
@@ -130,6 +240,7 @@ enum ContentType {
   USER_PROFILE
   SELLER_PROFILE
   REGISTRY
+  SERVICE
 }
 
 enum ReportStatus {
