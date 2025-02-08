@@ -23,6 +23,8 @@ model User {
   contentReports  ContentReport[] @relation("ReportedBy")
   moderationEvents ModerationEvent[] @relation("ModeratedBy")
   reportedContent ContentReport[] @relation("ReportedContent")
+  productViews    ProductView[]
+  userEngagement  UserEngagement?
 }
 
 enum UserRole {
@@ -31,6 +33,96 @@ enum UserRole {
   ADMIN
   MODERATOR
 }
+
+model Product {
+  id            String        @id @default(cuid())
+  name          String
+  description   String        @db.Text
+  price         Float
+  inventory     Int
+  sellerId      String
+  seller        Seller        @relation(fields: [sellerId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  orderItems    OrderItem[]
+  productViews  ProductView[]
+  inventoryLogs InventoryLog[]
+  
+  @@index([sellerId])
+}
+
+model ProductView {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  sessionId   String?
+  timestamp   DateTime @default(now())
+  source      String?  // e.g., "search", "recommendation", "direct"
+  
+  @@index([productId])
+  @@index([userId])
+  @@index([timestamp])
+}
+
+model InventoryLog {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int      // Can be positive (restocked) or negative (sold)
+  type        String   // "sale", "restock", "adjustment"
+  timestamp   DateTime @default(now())
+  note        String?
+  
+  @@index([productId])
+  @@index([timestamp])
+}
+
+model UserEngagement {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id])
+  lastLogin           DateTime @default(now())
+  totalLogins         Int      @default(0)
+  totalOrders         Int      @default(0)
+  totalSpent          Float    @default(0)
+  avgOrderValue       Float    @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+model SalesMetric {
+  id            String   @id @default(cuid())
+  sellerId      String
+  seller        Seller   @relation(fields: [sellerId], references: [id])
+  date          DateTime
+  revenue       Float
+  orderCount    Int
+  avgOrderValue Float
+  
+  @@unique([sellerId, date])
+  @@index([sellerId])
+  @@index([date])
+}
+
+model Seller {
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeName       String
+  description     String?       @db.Text
+  contactEmail    String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  orders          Order[]       @relation("SellerOrders")
+  products        Product[]
+  salesMetrics    SalesMetric[]
+}
+
+// Existing models below...
 
 enum ContentType {
   PRODUCT
@@ -90,18 +182,6 @@ model ModerationEvent {
   @@index([reportId])
 }
 
-model Seller {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  storeName       String
-  description     String?   @db.Text
-  contactEmail    String
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  orders          Order[]   @relation("SellerOrders")
-}
-
 model Order {
   id              String      @id @default(cuid())
   userId          String
@@ -114,7 +194,6 @@ model Order {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   shippingAddress String
-  // Shipping tracking fields
   trackingNumber  String?
   carrier         ShippingCarrier?
   shippingStatus  ShippingStatus?  @default(PENDING)
@@ -127,6 +206,7 @@ model OrderItem {
   orderId     String
   order       Order    @relation(fields: [orderId], references: [id])
   productId   String
+  product     Product  @relation(fields: [productId], references: [id])
   quantity    Int
   unitPrice   Float
   totalPrice  Float
@@ -168,4 +248,51 @@ enum ShippingCarrier {
   UPS
   FEDEX
   DHL
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model HelpCategory {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?       @db.Text
+  articles    HelpArticle[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([slug])
+}
+
+model HelpTag {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  articles    HelpArticle[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model HelpArticle {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  content     String        @db.Text
+  excerpt     String        @db.Text
+  status      ArticleStatus @default(PUBLISHED)
+  category    HelpCategory  @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  tags        HelpTag[]
+  views       Int           @default(0)
+  helpful     Int           @default(0)
+  notHelpful  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([status])
 }
