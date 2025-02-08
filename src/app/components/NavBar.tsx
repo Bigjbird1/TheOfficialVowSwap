@@ -25,7 +25,7 @@ function AuthButtons() {
           Sign Out
         </button>
         <Link 
-          href="/sell" 
+          href="/seller/dashboard" 
           className="px-6 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
         >
           Start Selling
