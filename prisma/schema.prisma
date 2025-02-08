@@ -48,8 +48,18 @@ model Product {
   orderItems    OrderItem[]
   productViews  ProductView[]
   inventoryLogs InventoryLog[]
+  category      String?
+  theme         String?
+  isActive      Boolean       @default(true)
+  isNewArrival  Boolean       @default(false)
+  rating        Float?
+  popularity    Int           @default(0)
+  tags          String[]      @default([])
   
   @@index([sellerId])
+  @@index([category])
+  @@index([isActive])
+  @@index([isNewArrival])
 }
 
 model ProductView {

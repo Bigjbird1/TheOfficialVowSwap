@@ -4,8 +4,52 @@ import { ProductFilters, SortOption } from '@/app/types/filters';
 import prismaClient from '@prisma/client';
 const { Prisma } = prismaClient;
 
+// Custom error class for API errors
+class APIError extends Error {
+  constructor(
+    message: string,
+    public status: number = 500,
+    public code?: string
+  ) {
+    super(message);
+    this.name = 'APIError';
+  }
+}
+
+// Validate query parameters
+function validateQueryParams(params: URLSearchParams) {
+  const page = Number(params.get('page'));
+  const limit = Number(params.get('limit'));
+  const minPrice = params.get('minPrice');
+  const maxPrice = params.get('maxPrice');
+
+  if (page && (isNaN(page) || page < 1)) {
+    throw new APIError('Invalid page number', 400, 'INVALID_PAGE');
+  }
+
+  if (limit && (isNaN(limit) || limit < 1 || limit > 100)) {
+    throw new APIError('Invalid limit. Must be between 1 and 100', 400, 'INVALID_LIMIT');
+  }
+
+  if (minPrice && (isNaN(Number(minPrice)) || Number(minPrice) < 0)) {
+    throw new APIError('Invalid minimum price', 400, 'INVALID_MIN_PRICE');
+  }
+
+  if (maxPrice && (isNaN(Number(maxPrice)) || Number(maxPrice) < 0)) {
+    throw new APIError('Invalid maximum price', 400, 'INVALID_MAX_PRICE');
+  }
+
+  if (minPrice && maxPrice && Number(minPrice) > Number(maxPrice)) {
+    throw new APIError('Minimum price cannot be greater than maximum price', 400, 'INVALID_PRICE_RANGE');
+  }
+}
+
 export async function GET(request: NextRequest) {
+  let isConnected = false;
+  
   try {
+    // Validate query parameters first
+    validateQueryParams(request.nextUrl.searchParams);
     const searchParams = request.nextUrl.searchParams;
     
     // Parse filter parameters
@@ -34,9 +78,7 @@ export async function GET(request: NextRequest) {
     if (filters.categories?.length) {
       where.AND.push({
         category: {
-          name: {
-            in: filters.categories
-          }
+          in: filters.categories
         }
       });
     }
@@ -44,9 +86,9 @@ export async function GET(request: NextRequest) {
     // Theme filter
     if (filters.themes?.length) {
       where.AND.push({
-        OR: filters.themes.map(theme => ({
-          theme: theme
-        }))
+        theme: {
+          in: filters.themes
+        }
       });
     }
 
@@ -136,10 +178,11 @@ export async function GET(request: NextRequest) {
     const limit = Number(searchParams.get('limit')) || 12;
     const skip = (page - 1) * limit;
 
-    // First verify database connection
+    // Establish database connection
     await prisma.$connect();
+    isConnected = true;
 
-    // Execute query with proper error handling
+    // Execute query with enhanced error handling
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
@@ -155,16 +198,26 @@ export async function GET(request: NextRequest) {
         }
       }).catch((error: unknown) => {
         console.error('Error fetching products:', error);
-        throw new Error('Failed to fetch products');
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new APIError(`Database error: ${error.message}`, 500, error.code);
+        }
+        throw new APIError('Failed to fetch products');
       }),
       prisma.product.count({ where }).catch((error: unknown) => {
         console.error('Error counting products:', error);
-        throw new Error('Failed to count products');
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new APIError(`Database error: ${error.message}`, 500, error.code);
+        }
+        throw new APIError('Failed to count products');
       })
     ]);
 
-    // Disconnect after query
-    await prisma.$disconnect();
+    // Always try to disconnect after query
+    if (isConnected) {
+      await prisma.$disconnect().catch(error => {
+        console.error('Error disconnecting from database:', error);
+      });
+    }
 
     return NextResponse.json({
       products,
@@ -179,16 +232,37 @@ export async function GET(request: NextRequest) {
     console.error('Products API Error:', error);
     
     // Ensure connection is closed in case of error
-    try {
-      await prisma.$disconnect();
-    } catch (disconnectError: unknown) {
-      console.error('Error disconnecting from database:', disconnectError);
+    if (isConnected) {
+      await prisma.$disconnect().catch(error => {
+        console.error('Error disconnecting from database:', error);
+      });
     }
 
-    // Return more detailed error message
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    // Handle different types of errors
+    if (error instanceof APIError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
+    } else if (error instanceof Prisma.PrismaClientInitializationError) {
+      return NextResponse.json(
+        { error: 'Database connection failed', code: 'DB_CONNECT_ERROR' },
+        { status: 503 }
+      );
+    } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        { error: 'Database query failed', code: error.code },
+        { status: 500 }
+      );
+    }
+
+    // Generic error handler
     return NextResponse.json(
-      { error: `Failed to fetch products: ${errorMessage}` },
+      { 
+        error: 'An unexpected error occurred',
+        code: 'INTERNAL_ERROR',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
