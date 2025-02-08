@@ -136,6 +136,10 @@ export async function GET(request: NextRequest) {
     const limit = Number(searchParams.get('limit')) || 12;
     const skip = (page - 1) * limit;
 
+    // First verify database connection
+    await prisma.$connect();
+
+    // Execute query with proper error handling
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
@@ -143,22 +147,24 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
         include: {
-          category: true,
           seller: {
             select: {
-              storeName: true,
-              rating: true
-            }
-          },
-          reviews: {
-            select: {
-              rating: true
+              storeName: true
             }
           }
         }
+      }).catch((error: unknown) => {
+        console.error('Error fetching products:', error);
+        throw new Error('Failed to fetch products');
       }),
-      prisma.product.count({ where })
+      prisma.product.count({ where }).catch((error: unknown) => {
+        console.error('Error counting products:', error);
+        throw new Error('Failed to count products');
+      })
     ]);
+
+    // Disconnect after query
+    await prisma.$disconnect();
 
     return NextResponse.json({
       products,
@@ -169,10 +175,20 @@ export async function GET(request: NextRequest) {
         perPage: limit
       }
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Products API Error:', error);
+    
+    // Ensure connection is closed in case of error
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError: unknown) {
+      console.error('Error disconnecting from database:', disconnectError);
+    }
+
+    // Return more detailed error message
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
-      { error: 'Failed to fetch products' },
+      { error: `Failed to fetch products: ${errorMessage}` },
       { status: 500 }
     );
   }

@@ -5,7 +5,8 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 interface FormErrors {
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   password?: string;
 }
@@ -60,10 +61,15 @@ export default function SignUpForm() {
     const newErrors: FormErrors = {};
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const name = formData.get("name") as string;
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
 
-    if (!name || name.length < 2) {
-      newErrors.name = "Name must be at least 2 characters long";
+    if (!firstName || firstName.length < 2) {
+      newErrors.firstName = "First name must be at least 2 characters long";
+    }
+
+    if (!lastName || lastName.length < 2) {
+      newErrors.lastName = "Last name must be at least 2 characters long";
     }
 
     if (!validateEmail(email)) {
@@ -93,7 +99,9 @@ export default function SignUpForm() {
 
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const name = formData.get("name") as string;
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
+    const name = `${firstName} ${lastName}`;
 
     try {
       const res = await fetch("/api/auth/signup", {
@@ -145,27 +153,52 @@ export default function SignUpForm() {
       aria-label="Sign up form"
     >
       <div className="space-y-4">
-        <div className="relative">
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Full Name
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            autoComplete="name"
-            required
-            aria-required="true"
-            aria-invalid={!!fieldErrors.name}
-            aria-describedby={fieldErrors.name ? "name-error" : undefined}
-            className="w-full px-4 py-3 border rounded-full bg-gray-50 placeholder-gray-500 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
-            placeholder="Enter your full name"
-          />
-          {fieldErrors.name && (
-            <div id="name-error" className="text-red-500 text-sm mt-1" role="alert">
-              {fieldErrors.name}
-            </div>
-          )}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="relative">
+            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+              First Name
+            </label>
+            <input
+              id="firstName"
+              name="firstName"
+              type="text"
+              autoComplete="given-name"
+              required
+              aria-required="true"
+              aria-invalid={!!fieldErrors.firstName}
+              aria-describedby={fieldErrors.firstName ? "firstName-error" : undefined}
+              className="w-full px-4 py-3 border rounded-full bg-gray-50 placeholder-gray-500 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+              placeholder="Enter first name"
+            />
+            {fieldErrors.firstName && (
+              <div id="firstName-error" className="text-red-500 text-sm mt-1" role="alert">
+                {fieldErrors.firstName}
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+              Last Name
+            </label>
+            <input
+              id="lastName"
+              name="lastName"
+              type="text"
+              autoComplete="family-name"
+              required
+              aria-required="true"
+              aria-invalid={!!fieldErrors.lastName}
+              aria-describedby={fieldErrors.lastName ? "lastName-error" : undefined}
+              className="w-full px-4 py-3 border rounded-full bg-gray-50 placeholder-gray-500 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+              placeholder="Enter last name"
+            />
+            {fieldErrors.lastName && (
+              <div id="lastName-error" className="text-red-500 text-sm mt-1" role="alert">
+                {fieldErrors.lastName}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="relative">
