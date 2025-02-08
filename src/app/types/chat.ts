@@ -1,5 +1,8 @@
-import { User } from '@prisma/client';
-
+export interface UserBase {
+  id: string;
+  name: string | null;
+  image: string | null;
+}
 export interface Message {
   id: string;
   conversationId: string;
@@ -10,8 +13,8 @@ export interface Message {
   updatedAt: Date;
   isRead: boolean;
   attachmentUrl?: string;
-  sender?: Pick<User, 'id' | 'name' | 'image'>;
-  receiver?: Pick<User, 'id' | 'name' | 'image'>;
+  sender?: UserBase;
+  receiver?: UserBase;
 }
 
 export interface Conversation {
@@ -23,8 +26,8 @@ export interface Conversation {
   updatedAt: Date;
   lastMessageAt: Date;
   status: ConversationStatus;
-  initiator?: Pick<User, 'id' | 'name' | 'image'>;
-  receiver?: Pick<User, 'id' | 'name' | 'image'>;
+  initiator?: UserBase;
+  receiver?: UserBase;
 }
 
 export enum ConversationStatus {

@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession();
     if (!session?.user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json<ValidateCouponResponse>({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const data: ValidateCouponRequest = await req.json();
@@ -25,11 +25,13 @@ export async function POST(req: NextRequest) {
     });
 
     if (!coupon) {
-      return NextResponse.json({
+      return NextResponse.json<ValidateCouponResponse>({
         success: true,
         data: {
           valid: false,
           message: 'Invalid coupon code',
+          discountType: undefined,
+          discount: undefined
         },
       });
     }
@@ -41,33 +43,39 @@ export async function POST(req: NextRequest) {
       now < coupon.promotion.startDate ||
       now > coupon.promotion.endDate
     ) {
-      return NextResponse.json({
+      return NextResponse.json<ValidateCouponResponse>({
         success: true,
         data: {
           valid: false,
           message: 'Coupon has expired or is not active',
+          discountType: undefined,
+          discount: undefined
         },
       });
     }
 
     // Check minimum purchase requirement
     if (coupon.minimumPurchase && totalAmount < coupon.minimumPurchase) {
-      return NextResponse.json({
+      return NextResponse.json<ValidateCouponResponse>({
         success: true,
         data: {
           valid: false,
           message: `Minimum purchase amount of $${coupon.minimumPurchase} required`,
+          discountType: undefined,
+          discount: undefined
         },
       });
     }
 
     // Check maximum uses
     if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
-      return NextResponse.json({
+      return NextResponse.json<ValidateCouponResponse>({
         success: true,
         data: {
           valid: false,
           message: 'Coupon has reached maximum usage limit',
+          discountType: undefined,
+          discount: undefined
         },
       });
     }
@@ -77,11 +85,13 @@ export async function POST(req: NextRequest) {
       coupon.perUserLimit &&
       coupon.usedCoupons.length >= coupon.perUserLimit
     ) {
-      return NextResponse.json({
+      return NextResponse.json<ValidateCouponResponse>({
         success: true,
         data: {
           valid: false,
           message: 'You have reached the usage limit for this coupon',
+          discountType: undefined,
+          discount: undefined
         },
       });
     }
@@ -115,7 +125,7 @@ export async function POST(req: NextRequest) {
       ]);
     }
 
-    return NextResponse.json({
+    return NextResponse.json<ValidateCouponResponse>({
       success: true,
       data: {
         valid: true,
@@ -126,7 +136,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error validating coupon:', error);
-    return NextResponse.json(
+    return NextResponse.json<ValidateCouponResponse>(
       { success: false, error: 'Failed to validate coupon' },
       { status: 500 }
     );
