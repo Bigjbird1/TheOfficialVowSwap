@@ -119,23 +119,24 @@ export default function SignUpForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to create account");
-      }
-
-      // Sign in the user after successful registration
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError("Error signing in after registration");
+        // Handle specific error cases
+        if (data.error === "User already exists") {
+          setError("An account with this email already exists");
+        } else if (data.details?.includes("passwordless sign up")) {
+          setError("This email is already registered with a different sign-in method");
+        } else {
+          throw new Error(data.error || "Failed to create account");
+        }
         setIsLoading(false);
         return;
       }
 
-      router.push("/");
+      // Show success message and email verification notice
+      setError(null);
+      setIsLoading(false);
+      
+      // Redirect to a verification page or show verification message
+      router.push("/auth/verify-email");
       router.refresh();
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
