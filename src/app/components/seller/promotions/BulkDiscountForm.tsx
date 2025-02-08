@@ -1,238 +1,202 @@
-import { useState, useEffect } from 'react';
-import { Promotion, CreatePromotionRequest } from '@/app/types/promotions';
+import { useState } from 'react';
+import { Promotion, BulkDiscount, CreatePromotionRequest } from '@/app/types/promotions';
 
 interface BulkDiscountFormProps {
-  promotion: Promotion | null;
+  promotion?: Promotion | null;
   onCancel: () => void;
   onSuccess: () => void;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-}
-
 export default function BulkDiscountForm({ promotion, onCancel, onSuccess }: BulkDiscountFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
   const [formData, setFormData] = useState<CreatePromotionRequest>({
     name: promotion?.name || '',
     description: promotion?.description || '',
     type: 'BULK_DISCOUNT',
-    startDate: promotion?.startDate ? new Date(promotion.startDate).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10),
-    endDate: promotion?.endDate ? new Date(promotion.endDate).toISOString().substring(0, 10) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
+    startDate: promotion?.startDate.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+    endDate: promotion?.endDate.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
     bulkDiscount: {
       productId: promotion?.bulkDiscount?.productId || '',
       minQuantity: promotion?.bulkDiscount?.minQuantity || 2,
       discount: promotion?.bulkDiscount?.discount || 0,
-      isActive: true,
-    },
+      isActive: promotion?.bulkDiscount?.isActive ?? true
+    }
   });
-
-  useEffect(() => {
-    // Fetch products when component mounts
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch('/api/seller/products');
-        const data = await response.json();
-
-        if (data.success) {
-          setProducts(data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }
-    };
-
-    fetchProducts();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const url = promotion
-        ? `/api/seller/promotions?id=${promotion.id}`
+      const url = promotion 
+        ? `/api/seller/promotions/${promotion.id}`
         : '/api/seller/promotions';
-      const method = promotion ? 'PATCH' : 'POST';
-
+      
       const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          startDate: new Date(formData.startDate).toISOString(),
-          endDate: new Date(formData.endDate).toISOString(),
-        }),
+        method: promotion ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        onSuccess();
-      } else {
-        throw new Error(data.error || 'Failed to save bulk discount');
+      if (!response.ok) {
+        throw new Error('Failed to save bulk discount');
       }
+
+      onSuccess();
     } catch (error) {
       console.error('Error saving bulk discount:', error);
-      // You might want to show an error message to the user here
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (name.startsWith('bulkDiscount.')) {
-      const field = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        bulkDiscount: {
-          ...prev.bulkDiscount!,
-          [field]: field === 'isActive' ? (value === 'true') : value,
-        },
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Promotion Name
-          </label>
-          <div className="mt-1">
-            <input
-              type="text"
-              name="name"
-              id="name"
-              required
-              value={formData.name}
-              onChange={handleChange}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-          </div>
-        </div>
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+          Name
+        </label>
+        <input
+          type="text"
+          name="name"
+          id="name"
+          required
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        />
+      </div>
 
-        <div className="sm:col-span-2">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-            Description
-          </label>
-          <div className="mt-1">
-            <input
-              type="text"
-              name="description"
-              id="description"
-              value={formData.description || ''}
-              onChange={handleChange}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-          </div>
-        </div>
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+          Description
+        </label>
+        <textarea
+          name="description"
+          id="description"
+          rows={3}
+          value={formData.description || ''}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="bulkDiscount.productId" className="block text-sm font-medium text-gray-700">
-            Product
-          </label>
-          <div className="mt-1">
-            <select
-              name="bulkDiscount.productId"
-              id="bulkDiscount.productId"
-              required
-              value={formData.bulkDiscount?.productId}
-              onChange={handleChange}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
-              <option value="">Select a product</option>
-              {products.map(product => (
-                <option key={product.id} value={product.id}>
-                  {product.name} (${product.price})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="bulkDiscount.minQuantity" className="block text-sm font-medium text-gray-700">
-            Minimum Quantity
-          </label>
-          <div className="mt-1">
-            <input
-              type="number"
-              name="bulkDiscount.minQuantity"
-              id="bulkDiscount.minQuantity"
-              required
-              min="2"
-              value={formData.bulkDiscount?.minQuantity}
-              onChange={handleChange}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="bulkDiscount.discount" className="block text-sm font-medium text-gray-700">
-            Discount Percentage
-          </label>
-          <div className="mt-1">
-            <input
-              type="number"
-              name="bulkDiscount.discount"
-              id="bulkDiscount.discount"
-              required
-              min="0"
-              max="100"
-              step="0.1"
-              value={formData.bulkDiscount?.discount}
-              onChange={handleChange}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-          </div>
-        </div>
-
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
             Start Date
           </label>
-          <div className="mt-1">
-            <input
-              type="date"
-              name="startDate"
-              id="startDate"
-              required
-              value={formData.startDate}
-              onChange={handleChange}
-              min={new Date().toISOString().substring(0, 10)}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-          </div>
+          <input
+            type="date"
+            name="startDate"
+            id="startDate"
+            required
+            value={formData.startDate}
+            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          />
         </div>
 
         <div>
           <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
             End Date
           </label>
-          <div className="mt-1">
-            <input
-              type="date"
-              name="endDate"
-              id="endDate"
-              required
-              value={formData.endDate}
-              onChange={handleChange}
-              min={formData.startDate}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-          </div>
+          <input
+            type="date"
+            name="endDate"
+            id="endDate"
+            required
+            value={formData.endDate}
+            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="productId" className="block text-sm font-medium text-gray-700">
+          Product ID
+        </label>
+        <input
+          type="text"
+          name="productId"
+          id="productId"
+          required
+          value={formData.bulkDiscount?.productId}
+          onChange={(e) => setFormData({
+            ...formData,
+            bulkDiscount: {
+              ...formData.bulkDiscount!,
+              productId: e.target.value
+            }
+          })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="minQuantity" className="block text-sm font-medium text-gray-700">
+          Minimum Quantity
+        </label>
+        <input
+          type="number"
+          name="minQuantity"
+          id="minQuantity"
+          required
+          min="2"
+          value={formData.bulkDiscount?.minQuantity}
+          onChange={(e) => setFormData({
+            ...formData,
+            bulkDiscount: {
+              ...formData.bulkDiscount!,
+              minQuantity: parseInt(e.target.value)
+            }
+          })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="discount" className="block text-sm font-medium text-gray-700">
+          Discount Percentage
+        </label>
+        <input
+          type="number"
+          name="discount"
+          id="discount"
+          required
+          min="0"
+          max="100"
+          value={formData.bulkDiscount?.discount}
+          onChange={(e) => setFormData({
+            ...formData,
+            bulkDiscount: {
+              ...formData.bulkDiscount!,
+              discount: parseFloat(e.target.value)
+            }
+          })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        />
+      </div>
+
+      <div className="flex items-center">
+        <input
+          type="checkbox"
+          name="isActive"
+          id="isActive"
+          checked={formData.bulkDiscount?.isActive}
+          onChange={(e) => setFormData({
+            ...formData,
+            bulkDiscount: {
+              ...formData.bulkDiscount!,
+              isActive: e.target.checked
+            }
+          })}
+          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+        />
+        <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
+          Active
+        </label>
       </div>
 
       <div className="flex justify-end space-x-3">
@@ -248,7 +212,7 @@ export default function BulkDiscountForm({ promotion, onCancel, onSuccess }: Bul
           disabled={isSubmitting}
           className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
-          {isSubmitting ? 'Saving...' : promotion ? 'Update Bulk Discount' : 'Create Bulk Discount'}
+          {isSubmitting ? 'Saving...' : promotion ? 'Update' : 'Create'}
         </button>
       </div>
     </form>

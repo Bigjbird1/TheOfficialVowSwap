@@ -23,7 +23,9 @@ export const ChatWindow = ({ conversation, onClose }: ChatWindowProps): React.Re
   const {
     sendMessage,
     markMessagesAsRead,
-    setTypingStatus
+    setTypingStatus,
+    isConnected,
+    error: socketError
   } = useSocket(
     // New message handler
     (message) => {
@@ -71,7 +73,7 @@ export const ChatWindow = ({ conversation, onClose }: ChatWindowProps): React.Re
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newMessage.trim() || sendingMessage) return;
+    if (!newMessage.trim() || sendingMessage || !isConnected) return;
 
     setSendingMessage(true);
     try {
@@ -80,11 +82,13 @@ export const ChatWindow = ({ conversation, onClose }: ChatWindowProps): React.Re
       inputRef.current?.focus();
     } catch (error) {
       console.error('Failed to send message:', error);
-      // Could add toast notification here
+      // Show error to user
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      alert(errorMessage); // You might want to use a proper toast notification here
     } finally {
       setSendingMessage(false);
     }
-};
+  };
 
   const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(e.target.value);
@@ -94,8 +98,8 @@ export const ChatWindow = ({ conversation, onClose }: ChatWindowProps): React.Re
     }
 
     setTypingStatus(conversation.id, true);
-    typingTimeoutRef.current = setTimeout(() => {
-      setTypingStatus(conversation.id, false);
+    typingTimeoutRef.current = setTimeout(async () => {
+      await setTypingStatus(conversation.id, false);
     }, 2000);
   };
 
@@ -110,48 +114,60 @@ export const ChatWindow = ({ conversation, onClose }: ChatWindowProps): React.Re
       aria-label="Chat window"
     >
       {/* Chat header */}
-      <div className="flex items-center justify-between p-4 border-b bg-gray-50">
-        <div className="flex items-center space-x-3">
-          <div className="relative w-10 h-10">
-            <Image
-              src={otherParticipant?.image || '/default-avatar.png'}
-              alt={`${otherParticipant?.name || 'User'}'s profile picture`}
-              className="rounded-full ring-2 ring-gray-200"
-              fill
-              sizes="40px"
-              style={{ objectFit: 'cover' }}
-            />
+      <div className="flex flex-col p-4 border-b bg-gray-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="relative w-10 h-10">
+              <Image
+                src={otherParticipant?.image || '/default-avatar.png'}
+                alt={`${otherParticipant?.name || 'User'}'s profile picture`}
+                className="rounded-full ring-2 ring-gray-200"
+                fill
+                sizes="40px"
+                style={{ objectFit: 'cover' }}
+              />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">
+                {otherParticipant?.name}
+              </h3>
+              {isTyping && (
+                <p className="text-sm text-gray-500 animate-pulse" role="status">
+                  Typing...
+                </p>
+              )}
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">
-              {otherParticipant?.name}
-            </h3>
-            {isTyping && (
-              <p className="text-sm text-gray-500 animate-pulse" role="status">
-                Typing...
-              </p>
-            )}
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors duration-200"
-          aria-label="Close chat"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Close chat"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        {socketError && (
+          <div className="mt-2 text-sm text-red-500" role="alert">
+            Connection error: {socketError}
+          </div>
+        )}
+        {!isConnected && !socketError && (
+          <div className="mt-2 text-sm text-yellow-500" role="alert">
+            Reconnecting to chat...
+          </div>
+        )}
       </div>
 
       {/* Messages */}
@@ -279,10 +295,10 @@ export const ChatWindow = ({ conversation, onClose }: ChatWindowProps): React.Re
           </div>
           <button
             type="submit"
-            disabled={!newMessage.trim() || sendingMessage}
+            disabled={!newMessage.trim() || sendingMessage || !isConnected}
             className={`px-6 py-3 font-medium text-white bg-blue-500 rounded-lg 
               transition-all duration-200 ease-in-out transform
-              ${!newMessage.trim() || sendingMessage 
+              ${!newMessage.trim() || sendingMessage || !isConnected
                 ? 'opacity-50 cursor-not-allowed' 
                 : 'hover:bg-blue-600 hover:shadow-md active:scale-95'
               }`}

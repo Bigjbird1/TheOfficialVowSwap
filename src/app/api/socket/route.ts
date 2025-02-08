@@ -1,22 +1,14 @@
-import { Server as SocketIOServer, Socket } from 'socket.io';
-import { Server as NetServer } from 'http';
-import { NextApiResponse } from 'next';
-import { 
-  WebSocketEvent, 
-  WebSocketEventType,
-  NewMessagePayload,
-  MessageReadPayload,
-  UserTypingPayload,
-  Message
-} from '@/app/types/chat';
+import { Server as SocketIOServer } from 'socket.io';
+import { NextRequest, NextResponse } from 'next/server';
+import { Message } from '@/app/types/chat';
 import prisma from '@/lib/prisma';
-import { getSession } from 'next-auth/react';
-import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 interface ServerToClientEvents {
-  'message.new': (payload: NewMessagePayload) => void;
-  'message.read': (payload: MessageReadPayload) => void;
-  'user.typing': (payload: UserTypingPayload) => void;
+  'message.new': (payload: { message: Message }) => void;
+  'message.read': (payload: { messageIds: string[]; userId: string; conversationId: string }) => void;
+  'user.typing': (payload: { conversationId: string; userId: string; isTyping: boolean }) => void;
   'error': (payload: { message: string }) => void;
 }
 
@@ -30,17 +22,13 @@ interface SocketData {
   userId: string;
 }
 
-type CustomSocket = Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
-type CustomServer = SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
+let io: SocketIOServer<ClientToServerEvents, ServerToClientEvents> | null = null;
+const connectedUsers = new Map<string, string>();
 
-// Store active connections
-const connectedUsers = new Map<string, string>(); // userId -> socketId
-
-export async function GET(req: Request, res: NextApiResponse) {
+export async function GET(req: NextRequest) {
   try {
-    if (!(res.socket as any).server.io) {
-      const httpServer: NetServer = (res.socket as any).server;
-      const io: CustomServer = new SocketIOServer(httpServer, {
+    if (!io) {
+      io = new SocketIOServer((globalThis as any).WebSocketServer, {
         path: '/api/socket',
         addTrailingSlash: false,
         cors: {
@@ -51,8 +39,8 @@ export async function GET(req: Request, res: NextApiResponse) {
       });
 
       // Authentication middleware
-      io.use(async (socket: CustomSocket, next) => {
-        const session = await getSession({ req: socket.request });
+      io.use(async (socket, next) => {
+        const session = await getServerSession(authOptions);
         if (!session?.user) {
           next(new Error('Unauthorized'));
           return;
@@ -62,7 +50,7 @@ export async function GET(req: Request, res: NextApiResponse) {
       });
 
       // Connection handler
-      io.on('connection', (socket: CustomSocket) => {
+      io.on('connection', (socket) => {
         const userId = socket.data.userId;
         connectedUsers.set(userId, socket.id);
 
@@ -116,7 +104,7 @@ export async function GET(req: Request, res: NextApiResponse) {
 
             // Emit to both participants
             const receiverSocketId = connectedUsers.get(message.receiverId);
-            if (receiverSocketId) {
+            if (receiverSocketId && io) {
               io.to(receiverSocketId).emit('message.new', { message });
             }
             socket.emit('message.new', { message });
@@ -151,7 +139,7 @@ export async function GET(req: Request, res: NextApiResponse) {
             const senderIds = [...new Set(messages.map((m) => m.senderId))];
             senderIds.forEach(senderId => {
               const senderSocketId = connectedUsers.get(senderId);
-              if (senderSocketId) {
+              if (senderSocketId && io) {
                 io.to(senderSocketId).emit('message.read', { 
                   userId,
                   messageIds,
@@ -182,7 +170,7 @@ export async function GET(req: Request, res: NextApiResponse) {
               : conversation.initiatorId;
 
             const receiverSocketId = connectedUsers.get(receiverId);
-            if (receiverSocketId) {
+            if (receiverSocketId && io) {
               io.to(receiverSocketId).emit('user.typing', {
                 conversationId,
                 userId,
@@ -196,15 +184,18 @@ export async function GET(req: Request, res: NextApiResponse) {
         });
       });
 
-      (res.socket as any).server.io = io;
     }
 
-    return NextResponse.json({ success: true });
+    return new NextResponse('WebSocket server is running', {
+      status: 200,
+      headers: {
+        'content-type': 'text/plain',
+      },
+    });
   } catch (error) {
     console.error('Socket initialization error:', error);
-    return NextResponse.json(
-      { error: 'Failed to start socket server' },
-      { status: 500 }
-    );
+    return new NextResponse('Failed to start WebSocket server', { status: 500 });
   }
 }
+
+export const dynamic = 'force-dynamic';
