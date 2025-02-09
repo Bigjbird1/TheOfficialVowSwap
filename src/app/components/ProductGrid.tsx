@@ -189,7 +189,7 @@ export default function ProductGrid({
     <div className={className}>
       <div 
         ref={gridRef}
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
         role="grid"
         aria-label="Products grid"
         style={{ 
@@ -202,16 +202,16 @@ export default function ProductGrid({
           <div 
             key={product.id}
             data-product-id={product.id}
-            className="group bg-white p-4 rounded-lg shadow hover:shadow-xl transition-all duration-300 relative"
+            className="group bg-white p-3 rounded-md border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 relative"
             role="gridcell"
             style={{ contain: 'layout style paint' }}
           >
             <Link 
               href={`/product/${product.id}`}
-              className="block focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded-lg"
+              className="block focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded-md"
             >
               <div 
-                className="aspect-[4/5] relative rounded-lg overflow-hidden mb-4"
+                className="aspect-[4/5] relative rounded-md overflow-hidden mb-3"
                 style={{ willChange: 'transform' }}
               >
                 <Image
@@ -227,7 +227,7 @@ export default function ProductGrid({
                   }}
                 />
               </div>
-              <h3 className="font-medium text-lg mb-2 line-clamp-2">{product.name}</h3>
+              <h3 className="font-medium text-base mb-1 line-clamp-2">{product.name}</h3>
               <div className="flex items-center justify-between">
                 <p className="text-rose-500 font-semibold" aria-label={`Price: $${product.price.toFixed(2)}`}>
                   ${product.price.toFixed(2)}
@@ -267,7 +267,7 @@ export default function ProductGrid({
 
       {showPagination && totalPages > 1 && (
         <nav 
-          className="mt-8 flex items-center justify-center gap-4" 
+          className="mt-6 flex items-center justify-center gap-4" 
           aria-label="Pagination"
           style={{ contain: 'content' }}
         >

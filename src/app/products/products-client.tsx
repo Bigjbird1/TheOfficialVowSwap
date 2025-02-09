@@ -5,6 +5,8 @@ import { Suspense, useState } from 'react'
 import { ReadonlyURLSearchParams, useRouter } from 'next/navigation'
 import ProductGrid from "../components/ProductGrid"
 import SearchBar from "../components/SearchBar"
+import FilterBar from "../components/FilterBar"
+import { ProductFilters } from "../types/filters"
 
 interface ProductsClientProps {
   products: any[]
@@ -67,9 +69,55 @@ export default function ProductsClient({ products: initialProducts, searchParams
       setIsLoading(false)
     }
   }
+
+  const handleFilterChange = async (filters: ProductFilters) => {
+    setIsLoading(true)
+    try {
+      const params = new URLSearchParams()
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          if (Array.isArray(value)) {
+            value.forEach(v => params.append(key, v))
+          } else if (typeof value === 'object') {
+            params.set(key, JSON.stringify(value))
+          } else {
+            params.set(key, String(value))
+          }
+        }
+      })
+      const response = await fetch(`/api/products?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch products')
+      }
+      const data = await response.json()
+      setProducts(data.products)
+    } catch (error) {
+      console.error('Error fetching filtered products:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSortChange = async (sortOption: string) => {
+    setIsLoading(true)
+    try {
+      const params = new URLSearchParams({ sort: sortOption })
+      const response = await fetch(`/api/products?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch products')
+      }
+      const data = await response.json()
+      setProducts(data.products)
+    } catch (error) {
+      console.error('Error fetching sorted products:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <SearchBar onSearch={handleSearch} />
+      <FilterBar onFilterChange={handleFilterChange} onSortChange={handleSortChange} />
       <ErrorBoundary
         FallbackComponent={ProductsError}
         onReset={() => {

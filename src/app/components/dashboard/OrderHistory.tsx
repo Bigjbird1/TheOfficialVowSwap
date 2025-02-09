@@ -4,25 +4,7 @@ import { useState, useEffect } from "react";
 import { OrderHistoryProps } from "@/app/types/dashboard";
 import { formatDistance } from "date-fns";
 
-export default function OrderHistory() {
-  const [data, setData] = useState<OrderHistoryProps["orders"]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch("/api/orders");
-        const orders = await response.json();
-        setData(orders);
-      } catch (error) {
-        console.error("Failed to fetch orders:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, []);
+export default function OrderHistory({ orders, isLoading }: OrderHistoryProps) {
 
   if (isLoading) {
     return (
@@ -36,7 +18,7 @@ export default function OrderHistory() {
     );
   }
 
-  if (!data.length) {
+  if (!orders.length) {
     return (
       <div className="text-center py-8">
         <h3 className="text-lg font-medium text-gray-900">No orders yet</h3>
@@ -52,7 +34,7 @@ export default function OrderHistory() {
       <h2 className="text-2xl font-semibold">Order History</h2>
       
       <div className="space-y-4">
-        {data.map((order) => (
+        {orders.map((order) => (
           <div
             key={order.id}
             className="bg-white rounded-lg border border-gray-200 overflow-hidden"
