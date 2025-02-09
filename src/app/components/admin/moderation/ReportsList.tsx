@@ -1,17 +1,19 @@
 import { useState } from 'react'
-import { ReportWithDetails, ModerationAction } from '@/app/types/moderation'
+import { ReportWithDetails, ModerationAction, ContentType } from '@/app/types/moderation'
 
 interface ReportsListProps {
   reports: ReportWithDetails[]
   isLoading: boolean
-  onModerate: (reportId: string, action: string, notes?: string) => Promise<void>
+  actionLoadingStates: Record<string, boolean>
+  onModerate: (reportId: string, action: ModerationAction, notes?: string) => Promise<void>
+  onViewContent: (type: ContentType, contentId: string) => Promise<void>
 }
 
-export default function ReportsList({ reports, isLoading, onModerate }: ReportsListProps) {
+export default function ReportsList({ reports, isLoading, actionLoadingStates, onModerate, onViewContent }: ReportsListProps) {
   const [selectedReport, setSelectedReport] = useState<string | null>(null)
   const [moderationNotes, setModerationNotes] = useState('')
 
-  const handleAction = async (reportId: string, action: string) => {
+  const handleAction = async (reportId: string, action: ModerationAction) => {
     await onModerate(reportId, action, moderationNotes)
     setSelectedReport(null)
     setModerationNotes('')
@@ -90,6 +92,12 @@ export default function ReportsList({ reports, isLoading, onModerate }: ReportsL
                   {new Date(report.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    onClick={() => onViewContent(report.type, report.contentId)}
+                    className="text-blue-600 hover:text-blue-900 mr-2"
+                  >
+                    View Content
+                  </button>
                   {selectedReport === report.id ? (
                     <div className="space-y-2">
                       <textarea
@@ -101,20 +109,39 @@ export default function ReportsList({ reports, isLoading, onModerate }: ReportsL
                       />
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => handleAction(report.id, 'APPROVE')}
-                          className="px-3 py-1 text-xs text-white bg-green-600 rounded hover:bg-green-700"
+                          onClick={() => handleAction(report.id, ModerationAction.APPROVE)}
+                          className="px-3 py-1 text-xs text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={actionLoadingStates[report.id]}
                         >
-                          Approve
+                          {actionLoadingStates[report.id] ? (
+                            <span className="flex items-center">
+                              <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Processing...
+                            </span>
+                          ) : 'Approve'}
                         </button>
                         <button
-                          onClick={() => handleAction(report.id, 'REJECT')}
-                          className="px-3 py-1 text-xs text-white bg-red-600 rounded hover:bg-red-700"
+                          onClick={() => handleAction(report.id, ModerationAction.REJECT)}
+                          className="px-3 py-1 text-xs text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={actionLoadingStates[report.id]}
                         >
-                          Reject
+                          {actionLoadingStates[report.id] ? (
+                            <span className="flex items-center">
+                              <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Processing...
+                            </span>
+                          ) : 'Reject'}
                         </button>
                         <button
                           onClick={() => setSelectedReport(null)}
-                          className="px-3 py-1 text-xs text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
+                          className="px-3 py-1 text-xs text-gray-700 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
+                          disabled={actionLoadingStates[report.id]}
                         >
                           Cancel
                         </button>

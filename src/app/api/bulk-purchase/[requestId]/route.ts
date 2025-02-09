@@ -82,7 +82,7 @@ export async function PATCH(
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data: UpdateBulkRequestStatusInput = await req.json();
+    const { status } = await req.json();
 
     const request = await prisma.bulkPurchaseRequest.findUnique({
       where: { id: params.requestId },
@@ -105,7 +105,7 @@ export async function PATCH(
     // Validate status transition
     const isValidTransition = validateStatusTransition(
       request.status,
-      data.status,
+      status,
       session.user.id === request.buyerId
     );
 
@@ -119,7 +119,7 @@ export async function PATCH(
     // Update request status
     const updatedRequest = await prisma.bulkPurchaseRequest.update({
       where: { id: params.requestId },
-      data: { status: data.status },
+      data: { status },
       include: {
         buyer: {
           select: {
@@ -156,7 +156,7 @@ export async function PATCH(
         userId: notificationUserId,
         type: 'BULK_REQUEST_STATUS_UPDATE',
         title: 'Bulk Purchase Request Updated',
-        message: `The status of your bulk purchase request for ${request.product.name} has been updated to ${data.status}`,
+        message: `The status of your bulk purchase request for ${request.product.name} has been updated to ${status}`,
         link: `/bulk-requests/${request.id}`
       }
     });

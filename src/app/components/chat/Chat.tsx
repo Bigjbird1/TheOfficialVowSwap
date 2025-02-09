@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState } from 'react';
 import { ConversationList } from './ConversationList';
 import { ChatWindow } from './ChatWindow';

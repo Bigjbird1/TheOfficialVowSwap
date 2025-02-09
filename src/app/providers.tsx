@@ -1,14 +1,30 @@
-"use client";
+'use client';
 
-import { SessionProvider } from "next-auth/react";
-import { RegistryProvider } from "./contexts/RegistryContext";
+import { ReactNode } from 'react';
+import { SessionProvider } from 'next-auth/react';
+import { NotificationProvider } from '@/app/providers/NotificationProvider';
+import { CartProvider } from '@/app/contexts/CartContext';
+import { WishlistProvider } from '@/app/contexts/WishlistContext';
+import { RegistryProvider } from '@/app/contexts/RegistryContext';
 
-export function Providers({ children }: { children: React.ReactNode }) {
+interface ProvidersProps {
+  children: ReactNode;
+}
+
+export function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider>
-      <RegistryProvider>
-        {children}
-      </RegistryProvider>
+      <NotificationProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <RegistryProvider>
+              {children}
+            </RegistryProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </NotificationProvider>
     </SessionProvider>
   );
 }
+
+export default Providers;

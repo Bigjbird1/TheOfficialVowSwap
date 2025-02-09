@@ -26,6 +26,8 @@ model User {
   productViews    ProductView[]
   userEngagement  UserEngagement?
   serviceBookings ServiceBooking[]
+  bulkRequests    BulkPurchaseRequest[] @relation("BuyerRequests")
+  notifications   Notification[]
 }
 
 enum UserRole {
@@ -55,6 +57,7 @@ model Product {
   rating        Float?
   popularity    Int           @default(0)
   tags          String[]      @default([])
+  bulkRequests  BulkPurchaseRequest[]
   
   @@index([sellerId])
   @@index([category])
@@ -140,6 +143,8 @@ model Seller {
   serviceBookings ServiceBooking[]
   portfolioItems  PortfolioItem[]
   reviews         ServiceReview[]
+  bulkRequests    BulkPurchaseRequest[] @relation("SellerRequests")
+  bulkResponses   BulkPurchaseResponse[] @relation("SellerResponses")
 }
 
 model ServiceCategory {
@@ -416,4 +421,77 @@ model HelpArticle {
   @@index([slug])
   @@index([categoryId])
   @@index([status])
+}
+
+enum BulkRequestStatus {
+  PENDING
+  RESPONDED
+  ACCEPTED
+  DECLINED
+  COMPLETED
+  CANCELLED
+}
+
+enum BulkResponseStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+model BulkPurchaseRequest {
+  id            String            @id @default(cuid())
+  buyerId       String
+  buyer         User              @relation("BuyerRequests", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId      String
+  seller        Seller            @relation("SellerRequests", fields: [sellerId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity      Int
+  requirements  String?           @db.Text
+  status        BulkRequestStatus @default(PENDING)
+  notes         String?           @db.Text
+  contactEmail  String
+  contactPhone  String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  responses     BulkPurchaseResponse[]
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([productId])
+  @@index([status])
+}
+
+model BulkPurchaseResponse {
+  id               String            @id @default(cuid())
+  requestId        String
+  request          BulkPurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  sellerId         String
+  seller           Seller            @relation("SellerResponses", fields: [sellerId], references: [id], onDelete: Cascade)
+  customPrice      Float
+  estimatedDelivery DateTime
+  notes            String?           @db.Text
+  status           BulkResponseStatus @default(PENDING)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([requestId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }

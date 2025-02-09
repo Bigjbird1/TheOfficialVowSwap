@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '../../auth/auth.config';
 import prisma from '@/lib/prisma';
 
 export async function GET() {
@@ -43,10 +43,8 @@ export async function GET() {
           }
         }
       }),
-      // Get sellers pending verification
-      prisma.seller.count({
-        where: { isVerified: false }
-      }),
+      // Get total sellers count (no verification status in schema)
+      prisma.seller.count(),
       // Calculate total revenue
       prisma.order.aggregate({
         _sum: {
@@ -76,7 +74,6 @@ export async function GET() {
         totalSellers,
         totalOrders,
         totalProducts,
-        pendingVerifications,
         revenue: revenue._sum.totalAmount || 0
       },
       recentOrders,
