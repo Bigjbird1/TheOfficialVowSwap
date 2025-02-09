@@ -1,12 +1,15 @@
-"use client"
+"use client";
 
-import { useState, useCallback } from "react"
-import { Search, Heart, ShoppingBag, User } from "lucide-react"
-import Link from "next/link"
-import { useSession, signOut } from "next-auth/react"
-import Cart from "./Cart"
-import { useCart } from "../contexts/CartContext"
-import { useDebounce } from "../hooks/useDebounce"
+import { useState, useCallback } from "react";
+import { Search, Heart, ShoppingBag, User, Menu } from "lucide-react";
+import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
+import Cart from "./Cart";
+import { useCart } from "../contexts/CartContext";
+import { useDebounce } from "../hooks/useDebounce";
+import MegaMenu from "./navigation/MegaMenu";
+import MobileNav from "./navigation/MobileNav";
+import { navigationData } from "../types/navigation";
 
 function AuthButtons() {
   const { data: session } = useSession()
@@ -51,14 +54,15 @@ function AuthButtons() {
 }
 
 export default function NavBar() {
-  // State management for navigation and cart
-  const [activeCategory, setActiveCategory] = useState("all")
-  const [isCartOpen, setIsCartOpen] = useState(false)
-  const { items } = useCart()
+  // State management
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { items } = useCart();
 
   // Search functionality with debouncing
-  const [searchQuery, setSearchQuery] = useState("")
-  const debouncedSearch = useDebounce(searchQuery, 300)
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Handle search input changes
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,10 +76,24 @@ export default function NavBar() {
     console.log("Searching for:", debouncedSearch)
   }, [debouncedSearch])
 
+  // Handle category hover
+  const handleCategoryHover = (categoryName: string | null) => {
+    setHoveredCategory(categoryName);
+  };
+
   return (
     <header className="border-b sticky top-0 bg-white z-50">
-      <div className="max-w-7xl mx-auto px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
+          <div className="flex items-center lg:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-rose-500"
+              aria-label="Open menu"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+          </div>
           <Link href="/">
             <div className="text-3xl font-bold bg-gradient-to-r from-rose-500 to-purple-600 bg-clip-text text-transparent cursor-pointer">
               VowSwap
@@ -128,29 +146,37 @@ export default function NavBar() {
           </div>
         </div>
 
-        <nav className="flex items-center gap-8 h-12 text-base mt-4 overflow-x-auto">
-          {["All Items", "Decor", "Lighting", "Furniture", "Floral", "Accessories", "Wedding Services"].map((category) => (
-            category === "Wedding Services" ? (
+        <nav className="hidden lg:flex items-center gap-8 text-base py-4 overflow-x-auto relative border-t">
+          {navigationData.map((category) => (
+            <div
+              key={category.name}
+              onMouseEnter={() => handleCategoryHover(category.name)}
+              onMouseLeave={() => handleCategoryHover(null)}
+              className="relative"
+            >
               <Link
-                key={category}
-                href="/wedding-services"
-                className="text-gray-600 hover:text-gray-900 transition whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded px-2"
-              >
-                {category}
-              </Link>
-            ) : (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(category.toLowerCase())}
-                className={`text-gray-600 hover:text-gray-900 transition whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded px-2 ${
-                  activeCategory === category.toLowerCase() ? "border-b-2 border-rose-500 font-semibold" : ""
+                href={category.href}
+                className={`text-gray-600 hover:text-gray-900 transition whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded px-2 py-1 ${
+                  hoveredCategory === category.name ? "text-gray-900" : ""
                 }`}
+                aria-expanded={hoveredCategory === category.name}
+                aria-haspopup={category.subcategories ? "true" : "false"}
+                role="menuitem"
               >
-                {category}
-              </button>
-            )
+                {category.name}
+              </Link>
+              <MegaMenu
+                category={category}
+                isOpen={hoveredCategory === category.name}
+              />
+            </div>
           ))}
         </nav>
+
+        <MobileNav
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+        />
       </div>
     </header>
   )

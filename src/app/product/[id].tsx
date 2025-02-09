@@ -8,7 +8,7 @@ interface Props {
 
 async function getProduct(id: string) {
   try {
-    const res = await fetch(`http://localhost:3002/api/products/${id}`, {
+    const res = await fetch(`/api/products/${id}`, {
       // Add cache: 'no-store' to prevent caching during development
       cache: 'no-store'
     })

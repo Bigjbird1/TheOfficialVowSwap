@@ -1,7 +1,8 @@
 import { Metadata } from "next"
 import { HeroSection } from "./components/home/HeroSection"
+import { PopularProducts } from "./components/home/PopularProducts"
+import { DealOfTheDay } from "./components/home/DealOfTheDay"
 import { FeaturedCategories } from "./components/home/FeaturedCategories"
-import { FeaturedItems } from "./components/home/FeaturedItems"
 import { Testimonials } from "./components/home/Testimonials"
 import { NewsletterSignup } from "./components/home/NewsletterSignup"
 import { Footer } from "./components/home/Footer"
@@ -38,8 +39,9 @@ export default function MarketplaceHome() {
     <div className="min-h-screen bg-white">
       <main id="main-content" className="flex-grow">
         <HeroSection />
+        <PopularProducts />
+        <DealOfTheDay />
         <FeaturedCategories />
-        <FeaturedItems />
         <Testimonials />
         <NewsletterSignup />
       </main>
