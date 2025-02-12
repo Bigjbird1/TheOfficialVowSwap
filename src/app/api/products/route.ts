@@ -219,7 +219,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       products,
       pagination: {
         total,
@@ -228,6 +228,13 @@ export async function GET(request: NextRequest) {
         perPage: limit
       }
     });
+
+    // Set cache control headers
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    
+    return response;
   } catch (error: unknown) {
     console.error('Products API Error:', error);
     

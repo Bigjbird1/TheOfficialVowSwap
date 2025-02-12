@@ -1,0 +1,78 @@
+graph TD
+    %% Main Application Structure
+    App[App Layout] --> Pages[Pages]
+    App --> Components[Components]
+    App --> API[API Routes]
+    App --> Services[Services]
+
+    %% Pages Breakdown
+    Pages --> Home[HomePage]
+    Pages --> Products[Products]
+    Pages --> Auth[Auth Pages]
+    Pages --> Dashboard[Dashboard]
+    Pages --> Registry[Registry]
+    Pages --> WeddingServices[Wedding Services]
+    Pages --> Admin[Admin]
+
+    %% Components Organization
+    Components --> UI[UI Components]
+    Components --> Features[Feature Components]
+    Components --> Layout[Layout Components]
+
+    %% Feature Components Detail
+    Features --> Cart[Cart]
+    Features --> Checkout[Checkout]
+    Features --> Reviews[Reviews]
+    Features --> Chat[Chat]
+    Features --> Loyalty[Loyalty]
+
+    %% Services Layer
+    Services --> Analytics[AnalyticsService]
+    Services --> Shipping[ShippingService]
+    Services --> Order[OrderService]
+    Services --> Wedding[WeddingServices]
+
+    %% API Routes Structure
+    API --> ProductsAPI[Products]
+    API --> AuthAPI[Auth]
+    API --> OrdersAPI[Orders]
+    API --> ReviewsAPI[Reviews]
+    API --> ShippingAPI[Shipping]
+
+    %% Database & External Services
+    DB[Database] --> Prisma[Prisma]
+    DB --> Supabase[Supabase]
+    ExternalServices[External Services] --> Firebase[Firebase]
+    ExternalServices --> Redis[Redis]
+
+    %% Context Providers
+    Contexts[Contexts] --> CartContext[CartContext]
+    Contexts --> WishlistContext[WishlistContext]
+    Contexts --> RegistryContext[RegistryContext]
+
+    %% Mobile Specific
+    Mobile[Mobile Components] --> BottomNav[BottomNav]
+    Mobile --> FilterDrawer[FilterDrawer]
+    Mobile --> ProductCardMobile[ProductCardMobile]
+
+    %% Admin Features
+    Admin --> Moderation[Moderation]
+    Admin --> Analytics[Analytics Dashboard]
+    Admin --> Orders[Order Management]
+
+    %% Seller Features
+    Seller[Seller Dashboard] --> ProductManagement[Product Management]
+    Seller --> PromotionsManagement[Promotions]
+    Seller --> OrderManagement[Order Management]
+    Seller --> Analytics[Analytics]
+
+    %% Authentication Flow
+    Auth --> SignIn[Sign In]
+    Auth --> SignUp[Sign Up]
+    Auth --> VerifyEmail[Email Verification]
+
+    %% Core Features
+    CoreFeatures[Core Features] --> Search[Search & Filter]
+    CoreFeatures --> BulkPurchase[Bulk Purchase]
+    CoreFeatures --> Registry[Gift Registry]
+    CoreFeatures --> Messaging[Messaging]

@@ -13,6 +13,12 @@ export interface ProductFilters {
   search?: string;
   sortBy?: SortOption;
   newArrivals?: boolean;
+  subcategory?: string;
+  brand?: string;
+  size?: string;
+  color?: string;
+  condition?: string;
+  onSale?: boolean;
 }
 
 export interface FilterOption {

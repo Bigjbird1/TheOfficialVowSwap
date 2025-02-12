@@ -34,6 +34,19 @@ interface ProductGridProps {
   showPagination?: boolean
   className?: string
   isLoading?: boolean
+  filters?: {
+    category: string;
+    subcategory: string;
+    brand: string;
+    size: string;
+    colour: string;
+    condition: string;
+    minPrice: string;
+    maxPrice: string;
+    sort: string;
+    onSale: boolean;
+  };
+  searchQuery?: string;
 }
 
 function StarRating({ rating = 0 }: { rating?: number }) {
@@ -75,18 +88,62 @@ export default function ProductGrid({
   itemsPerPage = 12,
   showPagination = true,
   className = "",
-  isLoading = false
+  isLoading = false,
+  filters,
+  searchQuery
 }: ProductGridProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [visibleItems, setVisibleItems] = useState<Set<string>>(new Set())
   const observerRef = useRef<IntersectionObserver | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
   
+  // Filter products based on search and filter criteria
+  const filteredProducts = products.filter(product => {
+    if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    
+    if (filters) {
+      if (filters.category && filters.category !== "" && product.category.toLowerCase() !== filters.category.toLowerCase()) {
+        return false;
+      }
+      
+      if (filters.minPrice && parseFloat(filters.minPrice) > product.price) {
+        return false;
+      }
+      
+      if (filters.maxPrice && parseFloat(filters.maxPrice) < product.price) {
+        return false;
+      }
+      
+      // Add other filter conditions as needed
+    }
+    
+    return true;
+  });
+
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (filters?.sort) {
+      switch (filters.sort) {
+        case 'price-low':
+          return a.price - b.price;
+        case 'price-high':
+          return b.price - a.price;
+        case 'popular':
+          return (b.reviewCount || 0) - (a.reviewCount || 0);
+        default:
+          return 0; // 'newest' or default case
+      }
+    }
+    return 0;
+  });
+
   // Calculate pagination values
-  const totalPages = Math.ceil(products.length / itemsPerPage)
+  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const currentProducts = products.slice(startIndex, endIndex)
+  const currentProducts = sortedProducts.slice(startIndex, endIndex)
 
   // Optimized scroll handler with debounce
   const handleScroll = useCallback(debounce(() => {
@@ -208,7 +265,7 @@ export default function ProductGrid({
           >
             <Link 
               href={`/product/${product.id}`}
-              className="block focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded-md"
+              className="block focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-md"
             >
               <div 
                 className="aspect-[4/5] relative rounded-md overflow-hidden mb-3"
@@ -229,7 +286,7 @@ export default function ProductGrid({
               </div>
               <h3 className="font-medium text-base mb-1 line-clamp-2">{product.name}</h3>
               <div className="flex items-center justify-between">
-                <p className="text-rose-500 font-semibold" aria-label={`Price: $${product.price.toFixed(2)}`}>
+                <p className="text-pink-500 font-semibold" aria-label={`Price: $${product.price.toFixed(2)}`}>
                   ${product.price.toFixed(2)}
                 </p>
                 <span className="text-sm text-gray-500">{product.category}</span>
@@ -274,7 +331,7 @@ export default function ProductGrid({
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent transition focus:outline-none focus:ring-2 focus:ring-rose-500"
+            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent transition focus:outline-none focus:ring-2 focus:ring-pink-500"
             aria-label="Previous page"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -285,7 +342,7 @@ export default function ProductGrid({
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent transition focus:outline-none focus:ring-2 focus:ring-rose-500"
+            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-transparent transition focus:outline-none focus:ring-2 focus:ring-pink-500"
             aria-label="Next page"
           >
             <ChevronRight className="w-6 h-6" />
@@ -313,7 +370,7 @@ function AddToCartButton({ product }: { product: Product }) {
   return (
     <button
       onClick={handleAddToCart}
-      className="absolute bottom-4 right-4 p-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+      className="absolute bottom-4 right-4 p-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
       aria-label={`Add ${product.name} to cart`}
       style={{ willChange: 'transform' }}
     >

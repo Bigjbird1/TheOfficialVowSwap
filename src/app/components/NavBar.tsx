@@ -17,7 +17,7 @@ function AuthButtons() {
   if (session) {
     return (
       <div className="flex items-center gap-4">
-        <Link href="/dashboard" className="flex items-center gap-2 hover:text-rose-500 transition">
+          <Link href="/dashboard" className="flex items-center gap-2 hover:text-pink-500 transition">
           <User className="w-5 h-5" />
           <span className="text-sm">{session.user?.name}</span>
         </Link>
@@ -29,7 +29,7 @@ function AuthButtons() {
         </button>
         <Link 
           href="/seller/dashboard" 
-          className="px-6 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+          className="px-6 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
         >
           Start Selling
         </Link>
@@ -45,7 +45,7 @@ function AuthButtons() {
         </button>
       </Link>
       <Link href="/auth/signup">
-        <button className="px-6 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition">
+        <button className="px-6 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition">
           Sign Up
         </button>
       </Link>
@@ -77,66 +77,74 @@ export default function NavBar() {
   }, [debouncedSearch])
 
   // Handle category hover
-  const handleCategoryHover = (categoryName: string | null) => {
+  const handleCategoryHover = useCallback((categoryName: string | null) => {
     setHoveredCategory(categoryName);
-  };
+  }, []);
 
   return (
-    <header className="border-b sticky top-0 bg-white z-50">
+    <header className="border-b sticky top-0 bg-white z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center lg:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-rose-500"
+              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-pink-500"
               aria-label="Open menu"
             >
               <Menu className="h-6 w-6" />
             </button>
           </div>
           <Link href="/">
-            <div className="text-3xl font-bold bg-gradient-to-r from-rose-500 to-purple-600 bg-clip-text text-transparent cursor-pointer">
+            <div className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent cursor-pointer">
               VowSwap
             </div>
           </Link>
 
           <div className="flex-1 mx-12">
             <form role="search" onSubmit={handleSearchSubmit} className="relative">
-              <input
-                type="search"
-                placeholder="Search wedding decor items..."
-                aria-label="Search wedding decor items"
-                className="w-full pl-12 pr-4 py-3 border rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                list="search-suggestions"
-              />
-              <datalist id="search-suggestions">
-                <option value="Wedding Arch" />
-                <option value="Table Centerpiece" />
-                <option value="Floral Arrangement" />
-                <option value="Lighting Decor" />
-                <option value="Vintage Accessories" />
-              </datalist>
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <div className="relative flex w-full">
+                <input
+                  type="search"
+                  placeholder="Search wedding decor items..."
+                  aria-label="Search wedding decor items"
+                  className="w-full pl-12 pr-24 py-3 border rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  list="search-suggestions"
+                />
+                <datalist id="search-suggestions">
+                  <option value="Wedding Arch" />
+                  <option value="Table Centerpiece" />
+                  <option value="Floral Arrangement" />
+                  <option value="Lighting Decor" />
+                  <option value="Vintage Accessories" />
+                </datalist>
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <button 
+                  type="submit" 
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition"
+                >
+                  Search
+                </button>
+              </div>
             </form>
           </div>
 
           <div className="flex items-center gap-6">
             <button 
               aria-label="Favorites" 
-              className="text-gray-600 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded-full p-1"
+              className="text-gray-600 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full p-1"
             >
               <Heart className="w-6 h-6" />
             </button>
             <button 
               aria-label="Shopping Bag" 
-              className="text-gray-600 hover:text-gray-900 transition relative focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded-full p-1"
+              className="text-gray-600 hover:text-gray-900 transition relative focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full p-1"
               onClick={() => setIsCartOpen(true)}
             >
               <ShoppingBag className="w-6 h-6" />
               {items.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {items.length}
                 </span>
               )}
@@ -152,13 +160,13 @@ export default function NavBar() {
               key={category.name}
               onMouseEnter={() => handleCategoryHover(category.name)}
               onMouseLeave={() => handleCategoryHover(null)}
-              className="relative"
+              className="relative group"
             >
               <Link
                 href={category.href}
-                className={`text-gray-600 hover:text-gray-900 transition whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 rounded px-2 py-1 ${
-                  hoveredCategory === category.name ? "text-gray-900" : ""
-                }`}
+                className={`text-gray-600 hover:text-gray-900 transition-colors duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full px-4 py-2 ${
+                  hoveredCategory === category.name ? "bg-pink-500 text-white font-medium" : ""
+                } group-hover:text-gray-900 group-hover:font-medium`}
                 aria-expanded={hoveredCategory === category.name}
                 aria-haspopup={category.subcategories ? "true" : "false"}
                 role="menuitem"

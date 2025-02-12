@@ -14,6 +14,28 @@ export const navigationData: Category[] = [
   {
     name: "All Items",
     href: "/products",
+    subcategories: [
+      {
+        name: "Featured Collections",
+        examples: ["New Arrivals", "Best Sellers", "Trending Items"],
+        href: "/products/featured"
+      },
+      {
+        name: "Shop by Style",
+        examples: ["Modern", "Rustic", "Vintage", "Bohemian"],
+        href: "/products/styles"
+      },
+      {
+        name: "Shop by Season",
+        examples: ["Spring", "Summer", "Fall", "Winter"],
+        href: "/products/seasons"
+      },
+      {
+        name: "Special Deals",
+        examples: ["Clearance", "Bundle Deals", "Limited Time Offers"],
+        href: "/products/deals"
+      }
+    ]
   },
   {
     name: "Decor",

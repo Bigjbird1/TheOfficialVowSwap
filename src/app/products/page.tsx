@@ -1,9 +1,8 @@
 import { headers } from 'next/headers'
-import { ReadonlyURLSearchParams } from 'next/navigation'
 import ProductsClient from './products-client'
 
 // Products fetching function with improved error handling
-async function getProducts(searchParams?: ReadonlyURLSearchParams) {
+async function getProducts(searchParams?: { [key: string]: string | string[] | undefined }) {
   const headersList = await headers()
   const host = headersList.get('host') || 'localhost:3004'
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
@@ -11,14 +10,27 @@ async function getProducts(searchParams?: ReadonlyURLSearchParams) {
   // Build URL with search params
   const url = new URL(`${protocol}://${host}/api/products`)
   if (searchParams) {
-    url.search = searchParams.toString()
+    const params = new URLSearchParams()
+    Object.entries(searchParams).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach(v => params.append(key, v))
+      } else if (value !== undefined) {
+        params.append(key, value)
+      }
+    })
+    url.search = params.toString()
   }
+  
+  // Add timestamp to URL to prevent caching
+  url.searchParams.append('_t', Date.now().toString())
   
   try {
     const res = await fetch(url, {
       cache: 'no-store',
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
       },
       next: {
         revalidate: 0 // Disable cache for real-time data
@@ -46,9 +58,9 @@ async function getProducts(searchParams?: ReadonlyURLSearchParams) {
 
 // Main page component (Server Component)
 export default async function ProductsPage({
-  searchParams,
+  searchParams = {},
 }: {
-  searchParams: ReadonlyURLSearchParams
+  searchParams?: { [key: string]: string | string[] | undefined }
 }) {
   const products = await getProducts(searchParams)
   
