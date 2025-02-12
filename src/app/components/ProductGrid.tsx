@@ -5,28 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react"
 import { useCart } from "../contexts/CartContext"
-
-interface Product {
-  id: string
-  name: string
-  price: number
-  description: string
-  category: string
-  rating?: number
-  reviewCount?: number
-  stockStatus: string
-  images: {
-    id: string
-    url: string
-    alt: string
-  }[]
-  specifications: {
-    [key: string]: string | undefined
-  }
-  shippingInfo: string
-  sellerName: string
-  sellerRating: number
-}
+import { Product } from "../types"
 
 interface ProductGridProps {
   products: Product[]
@@ -46,7 +25,6 @@ interface ProductGridProps {
     sort: string;
     onSale: boolean;
   };
-  searchQuery?: string;
 }
 
 function StarRating({ rating = 0 }: { rating?: number }) {
@@ -89,20 +67,15 @@ export default function ProductGrid({
   showPagination = true,
   className = "",
   isLoading = false,
-  filters,
-  searchQuery
+  filters
 }: ProductGridProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [visibleItems, setVisibleItems] = useState<Set<string>>(new Set())
   const observerRef = useRef<IntersectionObserver | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
   
-  // Filter products based on search and filter criteria
+  // Filter products based on filter criteria
   const filteredProducts = products.filter(product => {
-    if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    
     if (filters) {
       if (filters.category && filters.category !== "" && product.category.toLowerCase() !== filters.category.toLowerCase()) {
         return false;
@@ -259,16 +232,16 @@ export default function ProductGrid({
           <div 
             key={product.id}
             data-product-id={product.id}
-            className="group bg-white p-3 rounded-md border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 relative"
+            className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden"
             role="gridcell"
             style={{ contain: 'layout style paint' }}
           >
             <Link 
               href={`/product/${product.id}`}
-              className="block focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-md"
+              className="block focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-lg"
             >
               <div 
-                className="aspect-[4/5] relative rounded-md overflow-hidden mb-3"
+                className="aspect-[4/5] relative rounded-lg overflow-hidden mb-4 bg-gray-50"
                 style={{ willChange: 'transform' }}
               >
                 <Image
@@ -276,7 +249,7 @@ export default function ProductGrid({
                   alt={product.images[0]?.alt || `Product image of ${product.name}`}
                   fill
                   loading="lazy"
-                  className="object-cover group-hover:scale-110 transition-transform duration-300 will-change-transform"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500 will-change-transform"
                   sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   style={{ 
                     transform: 'translateZ(0)',
@@ -284,37 +257,48 @@ export default function ProductGrid({
                   }}
                 />
               </div>
-              <h3 className="font-medium text-base mb-1 line-clamp-2">{product.name}</h3>
-              <div className="flex items-center justify-between">
-                <p className="text-pink-500 font-semibold" aria-label={`Price: $${product.price.toFixed(2)}`}>
-                  ${product.price.toFixed(2)}
-                </p>
-                <span className="text-sm text-gray-500">{product.category}</span>
-              </div>
-              <div className="mt-2 flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <StarRating rating={product.rating} />
-                  {product.rating && (
-                    <span className="text-sm text-gray-500">{product.rating.toFixed(1)}</span>
+              <h3 className="font-medium text-lg mb-2 line-clamp-2 text-gray-800 group-hover:text-pink-600 transition-colors duration-200">
+                {product.name}
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p 
+                    className="text-xl font-semibold text-gray-900" 
+                    aria-label={`Price: $${product.price.toFixed(2)}`}
+                  >
+                    ${product.price.toFixed(2)}
+                  </p>
+                  <span className="text-sm font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+                    {product.category}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <StarRating rating={product.rating} />
+                    {product.rating && (
+                      <span className="text-sm font-medium text-gray-700">
+                        {product.rating.toFixed(1)}
+                      </span>
+                    )}
+                  </div>
+                  {product.reviewCount !== undefined && (
+                    <span className="text-sm text-gray-500 border-l border-gray-200 pl-2">
+                      {product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'}
+                    </span>
                   )}
                 </div>
-                {product.reviewCount !== undefined && (
-                  <span className="text-sm text-gray-500">
-                    ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
+                <div className="mt-3">
+                  <span 
+                    className={`text-sm font-medium px-2 py-1 rounded-full ${
+                      product.stockStatus === "In Stock" 
+                        ? "bg-green-50 text-green-700" 
+                        : "bg-orange-50 text-orange-700"
+                    }`}
+                    role="status"
+                  >
+                    {product.stockStatus}
                   </span>
-                )}
-              </div>
-              <div className="mt-2">
-                <span 
-                  className={`text-sm ${
-                    product.stockStatus === "In Stock" 
-                      ? "text-green-600" 
-                      : "text-orange-500"
-                  }`}
-                  role="status"
-                >
-                  {product.stockStatus}
-                </span>
+                </div>
               </div>
             </Link>
             <AddToCartButton product={product} />
@@ -370,7 +354,7 @@ function AddToCartButton({ product }: { product: Product }) {
   return (
     <button
       onClick={handleAddToCart}
-      className="absolute bottom-4 right-4 p-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
+      className="absolute bottom-4 right-4 p-3 bg-pink-500 text-white rounded-full hover:bg-pink-600 transform hover:scale-110 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 shadow-lg"
       aria-label={`Add ${product.name} to cart`}
       style={{ willChange: 'transform' }}
     >

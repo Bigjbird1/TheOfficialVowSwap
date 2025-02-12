@@ -1,8 +1,9 @@
 import { headers } from 'next/headers'
 import ProductsClient from './products-client'
+import { Product } from '../types'
 
 // Products fetching function with improved error handling
-async function getProducts(searchParams?: { [key: string]: string | string[] | undefined }) {
+async function getProducts(searchParams?: { [key: string]: string | string[] | undefined }): Promise<Product[]> {
   const headersList = await headers()
   const host = headersList.get('host') || 'localhost:3004'
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
@@ -48,7 +49,7 @@ async function getProducts(searchParams?: { [key: string]: string | string[] | u
       throw new Error('Invalid products data received from API')
     }
     
-    return data.products
+    return data.products as Product[]
   } catch (error) {
     console.error('Products fetch error:', error)
     // Return empty array instead of throwing to handle errors gracefully

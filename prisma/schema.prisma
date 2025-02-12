@@ -57,6 +57,7 @@ model Product {
   rating        Float?
   popularity    Int           @default(0)
   tags          String[]      @default([])
+  images        String[]      @default([])
   bulkRequests  BulkPurchaseRequest[]
   
   @@index([sellerId])

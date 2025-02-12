@@ -9,13 +9,14 @@ interface MegaMenuProps {
 }
 
 export default function MegaMenu({ category, isOpen }: MegaMenuProps) {
+  console.log(`MegaMenu isOpen: ${isOpen}`);
   if (!category.subcategories) return null;
 
   return (
 <div
-  className={`absolute left-1/2 transform -translate-x-1/2 top-[120px] bg-white shadow-lg rounded-lg ${
-    isOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"
-  } transition-all duration-300 ease-in-out z-[100] max-w-4xl mx-auto`}
+  className={`absolute left-1/2 transform -translate-x-1/2 top-full mt-1 bg-white shadow-lg rounded-lg ${
+    isOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-2 pointer-events-none"
+  } transition-all duration-200 ease-in-out z-[9999] max-w-4xl mx-auto w-screen`}
   role="menu"
   aria-orientation="vertical"
   aria-labelledby={`${category.name}-menu-button`}

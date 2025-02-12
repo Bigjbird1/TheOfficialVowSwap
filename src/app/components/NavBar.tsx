@@ -77,12 +77,30 @@ export default function NavBar() {
   }, [debouncedSearch])
 
   // Handle category hover
-  const handleCategoryHover = useCallback((categoryName: string | null) => {
-    setHoveredCategory(categoryName);
-  }, []);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
+const handleCategoryHover = useCallback((categoryName: string | null) => {
+  console.log(`Hovering over category: ${categoryName}`);
+  if (hoverTimeout) {
+    clearTimeout(hoverTimeout);
+    setHoverTimeout(null);
+  }
+
+  if (categoryName) {
+    console.log(`Setting hoveredCategory to: ${categoryName}`);
+    setHoveredCategory(categoryName);
+  } else {
+    const timeout = setTimeout(() => {
+      console.log(`Clearing hoveredCategory`);
+      setHoveredCategory(null);
+    }, 200); // Slight delay before closing
+
+    setHoverTimeout(timeout as unknown as NodeJS.Timeout);
+  }
+}, []);
+  
   return (
-    <header className="border-b sticky top-0 bg-white z-40">
+    <header className="border-b sticky top-0 bg-white z-[9000]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center lg:hidden">
@@ -122,7 +140,7 @@ export default function NavBar() {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <button 
                   type="submit" 
-                  className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full hover:from-pink-600 hover:to-purple-700 transition"
                 >
                   Search
                 </button>
@@ -156,12 +174,18 @@ export default function NavBar() {
 
         <nav className="hidden lg:flex items-center gap-8 text-base py-4 overflow-x-auto relative border-t">
           {navigationData.map((category) => (
-            <div
-              key={category.name}
-              onMouseEnter={() => handleCategoryHover(category.name)}
-              onMouseLeave={() => handleCategoryHover(null)}
-              className="relative group"
-            >
+<div
+  key={category.name}
+  onMouseEnter={() => {
+    console.log(`Mouse entered category: ${category.name}`);
+    handleCategoryHover(category.name);
+  }}
+  onMouseLeave={() => {
+    console.log(`Mouse left category: ${category.name}`);
+    handleCategoryHover(null);
+  }}
+  className="relative group h-full flex flex-col"
+>
               <Link
                 href={category.href}
                 className={`text-gray-600 hover:text-gray-900 transition-colors duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full px-4 py-2 ${
