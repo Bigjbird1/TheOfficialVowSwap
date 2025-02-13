@@ -215,54 +215,6 @@ export const HeroSection = () => {
         ))}
       </div>
 
-      {/* Best Sellers Preview */}
-      {slides[currentSlide].bestSellers && (
-        <div 
-          className="absolute bottom-8 right-8 z-20 hidden lg:flex gap-4"
-          style={{
-            animation: "fadeSlideUp 0.8s ease-out 0.8s forwards",
-            opacity: 0,
-            transform: "translateY(20px)"
-          }}
-        >
-          {slides[currentSlide].bestSellers.map((item, index) => (
-            <div 
-              key={index}
-              className="w-24 h-24 relative rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
-            >
-              <Image
-                src={item.image}
-                alt={item.name}
-                fill
-                className="object-cover"
-                sizes="96px"
-              />
-              <div className="absolute inset-0 bg-black/30 hover:bg-black/20 transition-colors duration-300" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Navigation Arrows */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-        aria-label="Previous slide"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-        aria-label="Next slide"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-
       {/* Slide Indicators */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
         {slides.map((_, index) => (
