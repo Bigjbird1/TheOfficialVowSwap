@@ -1,4 +1,4 @@
-import { PriceType, BookingStatus } from "@prisma/client";
+import { PriceType, BookingStatus, User, Seller } from "@prisma/client";
 
 export interface ServiceCategory {
   id: string;
@@ -80,6 +80,68 @@ export interface ServiceReview {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Filter Types
+export interface ServiceFilters {
+  categories: string[];
+  minRating: number | null;
+  location: string | null;
+  priceRange: PriceRange | null;
+  dateRange: DateRange | null;
+}
+
+export type PriceRange = {
+  min: number | null;
+  max: number | null;
+  label: string;
+};
+
+export const PRICE_RANGES = [
+  { label: 'Any Price', min: null, max: null },
+  { label: 'Under $1,000', min: 0, max: 1000 },
+  { label: '$1,000 - $2,500', min: 1000, max: 2500 },
+  { label: '$2,500 - $5,000', min: 2500, max: 5000 },
+  { label: 'Above $5,000', min: 5000, max: null },
+] as const;
+
+export type DateRange = {
+  start: Date | null;
+  end: Date | null;
+  label: string;
+};
+
+export const DATE_RANGES = [
+  { label: 'Any Date', start: null, end: null },
+  { 
+    label: 'Spring Weddings (March - May)', 
+    start: new Date(new Date().getFullYear(), 2, 1), // March 1st
+    end: new Date(new Date().getFullYear(), 4, 31) // May 31st
+  },
+  {
+    label: 'Summer Weddings (June - August)',
+    start: new Date(new Date().getFullYear(), 5, 1), // June 1st
+    end: new Date(new Date().getFullYear(), 7, 31) // August 31st
+  },
+  {
+    label: 'Fall Weddings (September - November)',
+    start: new Date(new Date().getFullYear(), 8, 1), // September 1st
+    end: new Date(new Date().getFullYear(), 10, 30) // November 30th
+  },
+  {
+    label: 'Winter Weddings (December - February)',
+    start: new Date(new Date().getFullYear(), 11, 1), // December 1st
+    end: new Date(new Date().getFullYear() + 1, 1, 28) // February 28th/29th
+  },
+] as const;
+
+export const VENDOR_CATEGORIES = [
+  'Photographers',
+  'Venues',
+  'Catering',
+  'Florists',
+  'Musicians & DJs',
+  'Wedding Planners',
+] as const;
 
 // Request/Response types for API endpoints
 export interface CreateServiceRequest {

@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Star } from 'lucide-react';
+import { MapPin, Star, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { WeddingService } from '@/app/types/wedding-services';
@@ -10,6 +10,24 @@ interface VendorCardProps {
 }
 
 export const VendorCard: React.FC<VendorCardProps> = ({ service }) => {
+  // Calculate next available date
+  const getNextAvailableDate = () => {
+    if (!service.availability) return null;
+    
+    const today = new Date();
+    const availableDates = Object.entries(service.availability)
+      .filter(([date, slots]) => {
+        const bookingDate = new Date(date);
+        return bookingDate >= today && slots.some(slot => slot.isAvailable);
+      })
+      .map(([date]) => new Date(date))
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    return availableDates[0] || null;
+  };
+
+  const nextAvailableDate = getNextAvailableDate();
+
   return (
     <Link 
       href={`/wedding-services/${service.id}`}
@@ -34,10 +52,22 @@ export const VendorCard: React.FC<VendorCardProps> = ({ service }) => {
             </span>
           </div>
           <p className="text-gray-600 text-sm mb-4">{service.description}</p>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
             <MapPin className="w-4 h-4" />
             {service.seller?.location || 'Location not specified'}
           </div>
+          {nextAvailableDate && (
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+              <Calendar className="w-4 h-4" />
+              <span>
+                Next available: {nextAvailableDate.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </span>
+            </div>
+          )}
           {service.reviews && service.reviews.length > 0 && (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">

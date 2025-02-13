@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
-import type { WeddingService } from "../types/wedding-services";
+import type { WeddingService, ServiceFilters } from "../types/wedding-services";
 import { getServices } from "../services/wedding-services";
 import ServiceSearch from "./components/ServiceSearch";
 import FilterSection from "./components/FilterSection";
@@ -12,9 +12,13 @@ export default function WeddingServicesPage() {
   const [services, setServices] = useState<WeddingService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [location, setLocation] = useState('');
-  const [category, setCategory] = useState('');
-  const [minRating, setMinRating] = useState<number | null>(null);
+  const [filters, setFilters] = useState<ServiceFilters>({
+    categories: [],
+    minRating: null,
+    location: null,
+    priceRange: null,
+    dateRange: null
+  });
   const [sortOption, setSortOption] = useState("Featured");
 
   // Fetch services on component mount
@@ -36,28 +40,40 @@ export default function WeddingServicesPage() {
     fetchData();
   }, []);
 
-  // Filter services based on search criteria
+  // Filter services based on all criteria
   const filteredServices = services.filter(service => {
-    const matchesLocation = !location || 
-      (service.seller?.location || '').toLowerCase().includes(location.toLowerCase());
+    // Location filter
+    const matchesLocation = !filters.location || 
+      (service.seller?.location || '').toLowerCase().includes(filters.location.toLowerCase());
     
-    const matchesCategory = !category || 
-      service.category?.name.toLowerCase() === category.toLowerCase();
+    // Category filter
+    const matchesCategory = filters.categories.length === 0 || 
+      filters.categories.includes(service.category?.name || '');
     
-    const matchesRating = !minRating || (service.reviews && service.reviews.length > 0 && 
-      (service.reviews.reduce((acc, review) => acc + review.rating, 0) / service.reviews.length) >= minRating);
+    // Rating filter
+    const matchesRating = !filters.minRating || (service.reviews && service.reviews.length > 0 && 
+      (service.reviews.reduce((acc, review) => acc + review.rating, 0) / service.reviews.length) >= filters.minRating);
 
-    return matchesLocation && matchesCategory && matchesRating;
+    // Price range filter
+    const matchesPrice = !filters.priceRange || 
+      ((!filters.priceRange.min || (service.price || 0) >= filters.priceRange.min) &&
+       (!filters.priceRange.max || (service.price || 0) <= filters.priceRange.max));
+
+    // Date range filter
+    const matchesDate = !filters.dateRange || !service.availability || 
+      Object.entries(service.availability).some(([date, slots]) => {
+        const bookingDate = new Date(date);
+        return (!filters.dateRange?.start || bookingDate >= filters.dateRange.start) &&
+               (!filters.dateRange?.end || bookingDate <= filters.dateRange.end) &&
+               slots.some(slot => slot.isAvailable);
+      });
+
+    return matchesLocation && matchesCategory && matchesRating && matchesPrice && matchesDate;
   });
 
-  // Handle search button click
-  const handleSearch = () => {
-    // The filtering is already reactive through the filteredServices computation
-  };
-
-  // Toggle rating filter
-  const toggleRatingFilter = () => {
-    setMinRating(minRating ? null : 4.0);
+  // Handle filter changes
+  const handleFilterChange = (newFilters: ServiceFilters) => {
+    setFilters(newFilters);
   };
 
   if (loading) {
@@ -87,13 +103,13 @@ export default function WeddingServicesPage() {
   return (
     <div className="min-h-screen bg-white">
       <ServiceSearch
-        location={location}
-        setLocation={setLocation}
-        category={category}
-        setCategory={setCategory}
-        onSearch={handleSearch}
+        filters={filters}
+        onFilterChange={handleFilterChange}
       />
-      <FilterSection minRating={minRating} toggleRatingFilter={toggleRatingFilter} />
+      <FilterSection 
+        filters={filters}
+        onFilterChange={handleFilterChange}
+      />
       <VendorResults 
         services={filteredServices} 
         sortOption={sortOption} 
