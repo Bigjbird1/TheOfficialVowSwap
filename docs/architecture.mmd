@@ -1,78 +1,36 @@
 graph TD
-    %% Main Application Structure
-    App[App Layout] --> Pages[Pages]
-    App --> Components[Components]
-    App --> API[API Routes]
-    App --> Services[Services]
-
-    %% Pages Breakdown
-    Pages --> Home[HomePage]
-    Pages --> Products[Products]
-    Pages --> Auth[Auth Pages]
-    Pages --> Dashboard[Dashboard]
-    Pages --> Registry[Registry]
-    Pages --> WeddingServices[Wedding Services]
-    Pages --> Admin[Admin]
-
-    %% Components Organization
-    Components --> UI[UI Components]
-    Components --> Features[Feature Components]
-    Components --> Layout[Layout Components]
-
-    %% Feature Components Detail
-    Features --> Cart[Cart]
-    Features --> Checkout[Checkout]
-    Features --> Reviews[Reviews]
-    Features --> Chat[Chat]
-    Features --> Loyalty[Loyalty]
-
-    %% Services Layer
-    Services --> Analytics[AnalyticsService]
-    Services --> Shipping[ShippingService]
-    Services --> Order[OrderService]
-    Services --> Wedding[WeddingServices]
-
-    %% API Routes Structure
-    API --> ProductsAPI[Products]
-    API --> AuthAPI[Auth]
-    API --> OrdersAPI[Orders]
-    API --> ReviewsAPI[Reviews]
-    API --> ShippingAPI[Shipping]
-
-    %% Database & External Services
-    DB[Database] --> Prisma[Prisma]
-    DB --> Supabase[Supabase]
-    ExternalServices[External Services] --> Firebase[Firebase]
-    ExternalServices --> Redis[Redis]
-
-    %% Context Providers
-    Contexts[Contexts] --> CartContext[CartContext]
-    Contexts --> WishlistContext[WishlistContext]
-    Contexts --> RegistryContext[RegistryContext]
-
-    %% Mobile Specific
-    Mobile[Mobile Components] --> BottomNav[BottomNav]
-    Mobile --> FilterDrawer[FilterDrawer]
-    Mobile --> ProductCardMobile[ProductCardMobile]
-
-    %% Admin Features
-    Admin --> Moderation[Moderation]
-    Admin --> Analytics[Analytics Dashboard]
-    Admin --> Orders[Order Management]
-
-    %% Seller Features
-    Seller[Seller Dashboard] --> ProductManagement[Product Management]
-    Seller --> PromotionsManagement[Promotions]
-    Seller --> OrderManagement[Order Management]
-    Seller --> Analytics[Analytics]
-
-    %% Authentication Flow
-    Auth --> SignIn[Sign In]
-    Auth --> SignUp[Sign Up]
-    Auth --> VerifyEmail[Email Verification]
-
-    %% Core Features
-    CoreFeatures[Core Features] --> Search[Search & Filter]
-    CoreFeatures --> BulkPurchase[Bulk Purchase]
-    CoreFeatures --> Registry[Gift Registry]
-    CoreFeatures --> Messaging[Messaging]
+    Client[Client Browser] --> |HTTP/WebSocket| Next[Next.js App]
+    Next --> |API Routes| Backend[Backend Services]
+    
+    subgraph Backend
+        API[API Layer] --> Services[Service Layer]
+        Services --> DB[(Database Layer)]
+        DB --> Prisma[Prisma ORM]
+        DB --> Supabase[Supabase]
+        Services --> Redis[(Redis Cache)]
+    end
+    
+    subgraph Features
+        Auth[Authentication] --> |NextAuth| API
+        Chat[Real-time Chat] --> |WebSocket| API
+        Registry[Wedding Registry] --> API
+        Products[Product Management] --> API
+        Reviews[Reviews System] --> API
+        Shipping[Shipping Tracking] --> API
+    end
+    
+    subgraph Admin
+        Moderation[Content Moderation]
+        Analytics[Analytics Dashboard]
+        Management[Seller Management]
+    end
+    
+    Admin --> API
+    
+    subgraph External
+        Payment[Payment Processing]
+        Cloud[Cloud Storage]
+        Notifications[Push Notifications]
+    end
+    
+    Backend --> External

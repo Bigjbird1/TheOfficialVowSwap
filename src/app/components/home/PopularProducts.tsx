@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
+import { useCart } from '../../contexts/CartContext'
+import { useWishlist } from '../../contexts/WishlistContext'
 
 interface Product {
   id: string
@@ -51,20 +54,42 @@ const mockProducts: Product[] = [
 ]
 
 export const PopularProducts = () => {
-  const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const { addItem } = useCart()
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
 
-  const toggleFavorite = (productId: string) => {
-    setFavorites(prev => {
-      const newFavorites = new Set(prev)
-      if (newFavorites.has(productId)) {
-        newFavorites.delete(productId)
-      } else {
-        newFavorites.add(productId)
-      }
-      return newFavorites
+  const handleAddToCart = (product: Product) => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image
     })
   }
+
+const [isWishlistLoading, setIsWishlistLoading] = useState<string | null>(null)
+const { data: session } = useSession()
+
+const toggleFavorite = async (productId: string) => {
+  if (!session) {
+    // Redirect to login if not authenticated
+    window.location.href = '/auth/signin?callbackUrl=' + encodeURIComponent(window.location.href)
+    return
+  }
+
+  setIsWishlistLoading(productId)
+  try {
+    if (isInWishlist(productId)) {
+      await removeFromWishlist(productId)
+    } else {
+      await addToWishlist(productId)
+    }
+  } catch (error) {
+    console.error('Error toggling favorite:', error)
+  } finally {
+    setIsWishlistLoading(null)
+  }
+}
 
   return (
     <section className="pt-6 pb-8 bg-white">
@@ -138,21 +163,29 @@ export const PopularProducts = () => {
                     toggleFavorite(product.id)
                   }}
                   className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white shadow-md hover:bg-gray-100 transition-colors"
-                  aria-label={favorites.has(product.id) ? "Remove from favorites" : "Add to favorites"}
+                  aria-label={isInWishlist(product.id) ? "Remove from favorites" : "Add to favorites"}
+                  disabled={isWishlistLoading === product.id}
                 >
-                  <svg 
-                    className={`w-6 h-6 ${favorites.has(product.id) ? 'text-rose-500 fill-current' : 'text-gray-400 stroke-current'}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                    />
-                  </svg>
+                  {isWishlistLoading === product.id ? (
+                    <svg className="animate-spin h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <svg 
+                      className={`w-6 h-6 ${isInWishlist(product.id) ? 'text-rose-500 fill-current' : 'text-gray-400 stroke-current'}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                      />
+                    </svg>
+                  )}
                 </button>
               </div>
             </Link>
@@ -204,28 +237,39 @@ export const PopularProducts = () => {
                         </p>
                       )}
                       
-                      <button className="w-full bg-rose-500 text-white px-6 py-3 rounded-full hover:bg-rose-600 transition-colors">
+                      <button 
+                        onClick={() => handleAddToCart(selectedProduct)}
+                        className="w-full bg-rose-500 text-white px-6 py-3 rounded-full hover:bg-rose-600 transition-colors"
+                      >
                         Add to Cart
                       </button>
                       
                       <button 
                         onClick={() => toggleFavorite(selectedProduct.id)}
                         className="w-full border-2 border-gray-200 px-6 py-3 rounded-full hover:border-gray-300 transition-colors flex items-center justify-center gap-2"
+                        disabled={isWishlistLoading === selectedProduct.id}
                       >
-                        <svg 
-                          className={`w-5 h-5 ${favorites.has(selectedProduct.id) ? 'text-rose-500 fill-current' : 'text-gray-400 stroke-current'}`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={2} 
-                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                          />
-                        </svg>
-                        {favorites.has(selectedProduct.id) ? 'Saved to Favorites' : 'Save to Favorites'}
+                        {isWishlistLoading === selectedProduct.id ? (
+                          <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg 
+                            className={`w-5 h-5 ${isInWishlist(selectedProduct.id) ? 'text-rose-500 fill-current' : 'text-gray-400 stroke-current'}`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                            />
+                          </svg>
+                        )}
+                        {isInWishlist(selectedProduct.id) ? 'Saved to Favorites' : 'Save to Favorites'}
                       </button>
                     </div>
                   </div>
