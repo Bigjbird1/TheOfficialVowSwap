@@ -18,6 +18,7 @@ interface FilterState {
   maxPrice: string;
   sort: string;
   onSale: boolean;
+  view: string;
 }
 
 interface ProductsClientProps {
@@ -33,18 +34,38 @@ export default function ProductsClient({ products, searchParams }: ProductsClien
   };
 
   // Initialize filters from URL search params
-  const [filters, setFilters] = useState<FilterState>(() => ({
-    category: getSearchParam("category"),
-    subcategory: getSearchParam("subcategory"),
-    brand: getSearchParam("brand"),
-    size: getSearchParam("size"),
-    colour: getSearchParam("colour"),
-    condition: getSearchParam("condition"),
-    minPrice: getSearchParam("minPrice"),
-    maxPrice: getSearchParam("maxPrice"),
-    sort: getSearchParam("sort") || "newest",
-    onSale: getSearchParam("onSale") === "true",
-  }));
+  const [filters, setFilters] = useState<FilterState>(() => {
+    const view = getSearchParam("view");
+    let initialFilters: FilterState = {
+      category: getSearchParam("category"),
+      subcategory: getSearchParam("subcategory"),
+      brand: getSearchParam("brand"),
+      size: getSearchParam("size"),
+      colour: getSearchParam("colour"),
+      condition: getSearchParam("condition"),
+      minPrice: getSearchParam("minPrice"),
+      maxPrice: getSearchParam("maxPrice"),
+      sort: getSearchParam("sort") || "newest",
+      onSale: getSearchParam("onSale") === "true",
+      view
+    };
+
+    // Apply preset filters based on view
+    switch (view) {
+      case "deals":
+        initialFilters.onSale = true;
+        initialFilters.sort = "discount";
+        break;
+      case "trending":
+        initialFilters.sort = "trending";
+        break;
+      case "discover":
+        initialFilters.sort = "recommended";
+        break;
+    }
+
+    return initialFilters;
+  });
 
   const handleFilterChange = (key: keyof FilterState, value: string | boolean) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -68,6 +89,9 @@ export default function ProductsClient({ products, searchParams }: ProductsClien
     }
     if (updatedFilters.sort && updatedFilters.sort !== "") {
       queryParams.append('sortBy', updatedFilters.sort);
+    }
+    if (updatedFilters.view && updatedFilters.view !== "") {
+      queryParams.append('view', updatedFilters.view);
     }
     
     window.location.href = `/products?${queryParams.toString()}`;

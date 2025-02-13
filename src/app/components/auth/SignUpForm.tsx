@@ -21,7 +21,11 @@ interface FormErrors {
  * - Error handling
  * - Password strength requirements
  */
-export default function SignUpForm() {
+interface SignUpFormProps {
+  redirectTo?: string;
+}
+
+export default function SignUpForm({ redirectTo }: SignUpFormProps) {
   const router = useRouter();
   // Track form-wide error state
   const [error, setError] = useState<string | null>(null);
@@ -135,8 +139,8 @@ export default function SignUpForm() {
       setError(null);
       setIsLoading(false);
       
-      // Redirect to a verification page or show verification message
-      router.push("/auth/verify-email");
+      // Redirect to the specified page or verification page
+      router.push(redirectTo || "/auth/verify-email");
       router.refresh();
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");

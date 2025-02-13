@@ -10,6 +10,8 @@ export default withAuth(
     const isAdminRoute = pathname.startsWith('/admin');
     const isModerationRoute = pathname.startsWith('/admin/moderation') || 
                              pathname.startsWith('/api/admin/moderation');
+    const isSellerRoute = pathname.startsWith('/seller') || 
+                         pathname.startsWith('/api/seller');
 
     // Allow both ADMIN and MODERATOR roles for moderation routes
     if (isModerationRoute) {
@@ -19,6 +21,10 @@ export default withAuth(
     }
     // Only ADMIN role for other admin routes
     else if (isAdminRoute && token?.role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+    // Only SELLER role for seller routes (or ADMIN for oversight)
+    else if (isSellerRoute && !['SELLER', 'ADMIN'].includes(token?.role || '')) {
       return NextResponse.redirect(new URL('/', req.url));
     }
 
@@ -35,6 +41,8 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/dashboard/:path*',
+    '/seller/:path*',
     '/api/admin/:path*',
+    '/api/seller/:path*'
   ],
 };

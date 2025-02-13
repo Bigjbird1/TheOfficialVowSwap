@@ -101,8 +101,8 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
   
   return (
     <header className="border-b sticky top-0 bg-white z-[9000]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           <div className="flex items-center lg:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -118,7 +118,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
             </div>
           </Link>
 
-          <div className="flex-1 mx-12">
+          <div className="w-[40%] mx-12">
             <form role="search" onSubmit={handleSearchSubmit} className="relative">
               <div className="relative flex w-full">
                 <input
@@ -137,7 +137,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
                   <option value="Lighting Decor" />
                   <option value="Vintage Accessories" />
                 </datalist>
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <button 
                   type="submit" 
                   className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full hover:from-pink-600 hover:to-purple-700 transition"
@@ -153,14 +153,14 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
               aria-label="Favorites" 
               className="text-gray-600 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full p-1"
             >
-              <Heart className="w-6 h-6" />
+              <Heart className="w-5 h-5" />
             </button>
             <button 
               aria-label="Shopping Bag" 
               className="text-gray-600 hover:text-gray-900 transition relative focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full p-1"
               onClick={() => setIsCartOpen(true)}
             >
-              <ShoppingBag className="w-6 h-6" />
+              <ShoppingBag className="w-5 h-5" />
               {items.length > 0 && (
                 <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {items.length}
@@ -172,7 +172,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
           </div>
         </div>
 
-        <nav className="hidden lg:flex items-center gap-8 text-base py-4 overflow-x-auto relative border-t">
+        <nav className="hidden lg:flex items-center gap-8 text-base h-10 overflow-x-auto relative border-t">
           {navigationData.map((category) => (
 <div
   key={category.name}
@@ -187,7 +187,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
   className="relative group h-full flex flex-col"
 >
               <Link
-                href={category.href}
+                href={category.name === "All Items" ? "/products" : `/products?categories=${category.name.toLowerCase()}`}
                 className={`text-gray-600 hover:text-gray-900 transition-colors duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full px-4 py-2 ${
                   hoveredCategory === category.name ? "bg-pink-500 text-white font-medium" : ""
                 } group-hover:text-gray-900 group-hover:font-medium`}

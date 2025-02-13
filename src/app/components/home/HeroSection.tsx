@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useAuthRedirect } from "@/app/hooks/useAuthRedirect"
 
 interface SlideData {
   title: string
@@ -22,10 +23,10 @@ const slides: SlideData[] = [
     title: "Wedding Season Deals",
     subtitle: "Up to 40% off on premium decor collections",
     buttonText: "Shop Deals",
-    buttonUrl: "/deals",
+    buttonUrl: "/products?view=deals",
     secondaryButton: {
       text: "Start Selling",
-      url: "/seller/onboarding"
+      url: "#" // Will be handled by handleStartSelling
     },
     backgroundImage: "/placeholder.svg?height=600&width=1920",
     overlayColor: "from-black/60"
@@ -34,7 +35,7 @@ const slides: SlideData[] = [
     title: "New Arrivals",
     subtitle: "Just landed: Exclusive designer collections",
     buttonText: "Discover Now",
-    buttonUrl: "/new-arrivals",
+    buttonUrl: "/products?view=discover",
     backgroundImage: "/placeholder.svg?height=600&width=1920",
     overlayColor: "from-rose-900/60"
   },
@@ -42,13 +43,14 @@ const slides: SlideData[] = [
     title: "Trending Items",
     subtitle: "See what other couples are loving",
     buttonText: "View Trending",
-    buttonUrl: "/trending",
+    buttonUrl: "/products?view=trending",
     backgroundImage: "/placeholder.svg?height=600&width=1920",
     overlayColor: "from-gray-900/60"
   }
 ]
 
 export const HeroSection = () => {
+  const { handleStartSelling } = useAuthRedirect()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
 
@@ -83,7 +85,7 @@ export const HeroSection = () => {
 
   return (
     <section 
-      className="relative h-[300px] md:h-[350px] lg:h-[400px] overflow-hidden" 
+      className="relative h-[300px] md:h-[375px] lg:h-[450px] overflow-hidden" 
       aria-label="Featured promotions carousel"
     >
       {/* Slides */}
@@ -110,7 +112,7 @@ export const HeroSection = () => {
             <div 
               className={`absolute inset-0 bg-gradient-to-r ${slide.overlayColor} to-transparent`}
             >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+              <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center py-24">
                 <div className="max-w-2xl text-white">
                   <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 tracking-tight">
                     {slide.title}
@@ -126,12 +128,12 @@ export const HeroSection = () => {
                       {slide.buttonText}
                     </Link>
                     {slide.secondaryButton && (
-                      <Link 
-                        href={slide.secondaryButton.url}
+                      <button 
+                        onClick={handleStartSelling}
                         className="inline-block px-6 py-2 bg-white text-rose-500 rounded-full hover:bg-gray-100 transform hover:scale-105 transition duration-300 shadow-lg hover:shadow-xl"
                       >
                         {slide.secondaryButton.text}
-                      </Link>
+                      </button>
                     )}
                   </div>
                 </div>

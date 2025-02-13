@@ -1,178 +1,183 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '../../auth/[...nextauth]/route';
 import { ProductFormData } from '@/app/types/seller';
+import { validateSellerAccess, createApiResponse } from '@/lib/utils';
+import { Prisma } from '@prisma/client';
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.email) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    const validation = await validateSellerAccess();
+    if (!validation.success) {
+      return createApiResponse(false, validation.error, validation.message, 401);
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { seller: true },
-    });
-
-    if (!user?.seller) {
-      return new NextResponse('Seller account not found', { status: 404 });
-    }
+    const { seller } = validation.data;
 
     const products = await prisma.product.findMany({
-      where: { sellerId: user.seller.id },
+      where: { sellerId: seller.id },
       include: {
-        category: true,
-        bulkDiscounts: true,
+        inventoryLogs: true,
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(products);
+    return createApiResponse(true, products);
   } catch (error) {
     console.error('Products Error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return createApiResponse(false, error, 'Failed to fetch products', 500);
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.email) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    const validation = await validateSellerAccess();
+    if (!validation.success) {
+      return createApiResponse(false, validation.error, validation.message, 401);
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { seller: true },
-    });
-
-    if (!user?.seller) {
-      return new NextResponse('Seller account not found', { status: 404 });
-    }
-
+    const { seller } = validation.data;
     const data: ProductFormData = await request.json();
 
+    const productData = {
+      sellerId: seller.id,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      category: data.categoryId,
+      inventory: data.quantity,
+      tags: data.tags,
+      images: data.images,
+    };
+
     const product = await prisma.product.create({
-      data: {
-        sellerId: user.seller.id,
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        categoryId: data.categoryId,
-        images: data.images,
-        quantity: data.quantity,
-        tags: data.tags,
-        bulkDiscounts: {
-          create: data.bulkDiscounts.map(discount => ({
-            minQuantity: discount.minQuantity,
-            discount: discount.discount,
-          })),
-        },
-      },
+      data: productData,
       include: {
-        category: true,
-        bulkDiscounts: true,
+        inventoryLogs: true,
       },
     });
 
-    return NextResponse.json(product);
+    // Create initial inventory log
+    await prisma.inventoryLog.create({
+      data: {
+        productId: product.id,
+        quantity: data.quantity,
+        type: 'restock',
+        note: 'Initial inventory',
+      },
+    });
+
+    return createApiResponse(true, product, 'Product created successfully', 201);
   } catch (error) {
     console.error('Create Product Error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return createApiResponse(false, error, 'Failed to create product', 500);
   }
 }
 
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.email) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    const validation = await validateSellerAccess();
+    if (!validation.success) {
+      return createApiResponse(false, validation.error, validation.message, 401);
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { seller: true },
+    const { seller } = validation.data;
+    const { id, ...data }: ProductFormData & { id: string } = await request.json();
+
+    if (!id) {
+      return createApiResponse(false, null, 'Product ID is required', 400);
+    }
+
+    // Verify product ownership
+    const existingProduct = await prisma.product.findUnique({
+      where: { id },
     });
 
-    if (!user?.seller) {
-      return new NextResponse('Seller account not found', { status: 404 });
+    if (!existingProduct) {
+      return createApiResponse(false, null, 'Product not found', 404);
     }
 
-    const { id, ...data }: ProductFormData & { id: string } = await request.json();
+    if (existingProduct.sellerId !== seller.id) {
+      return createApiResponse(false, null, 'Unauthorized to modify this product', 403);
+    }
+
+    const updateData = {
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      category: data.categoryId,
+      inventory: data.quantity,
+      tags: data.tags,
+      images: data.images,
+    };
 
     const product = await prisma.product.update({
       where: {
         id,
-        sellerId: user.seller.id, // Ensure seller owns the product
+        sellerId: seller.id,
       },
-      data: {
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        categoryId: data.categoryId,
-        images: data.images,
-        quantity: data.quantity,
-        tags: data.tags,
-        bulkDiscounts: {
-          deleteMany: {},
-          create: data.bulkDiscounts.map(discount => ({
-            minQuantity: discount.minQuantity,
-            discount: discount.discount,
-          })),
-        },
-      },
+      data: updateData,
       include: {
-        category: true,
-        bulkDiscounts: true,
+        inventoryLogs: true,
       },
     });
 
-    return NextResponse.json(product);
+    // Log inventory change if quantity changed
+    if (existingProduct.inventory !== data.quantity) {
+      await prisma.inventoryLog.create({
+        data: {
+          productId: product.id,
+          quantity: data.quantity - existingProduct.inventory,
+          type: 'adjustment',
+          note: 'Manual inventory adjustment',
+        },
+      });
+    }
+
+    return createApiResponse(true, product, 'Product updated successfully');
   } catch (error) {
     console.error('Update Product Error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return createApiResponse(false, error, 'Failed to update product', 500);
   }
 }
 
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.email) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    const validation = await validateSellerAccess();
+    if (!validation.success) {
+      return createApiResponse(false, validation.error, validation.message, 401);
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { seller: true },
-    });
-
-    if (!user?.seller) {
-      return new NextResponse('Seller account not found', { status: 404 });
-    }
-
+    const { seller } = validation.data;
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return new NextResponse('Product ID is required', { status: 400 });
+      return createApiResponse(false, null, 'Product ID is required', 400);
+    }
+
+    // Verify product ownership
+    const existingProduct = await prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!existingProduct) {
+      return createApiResponse(false, null, 'Product not found', 404);
+    }
+
+    if (existingProduct.sellerId !== seller.id) {
+      return createApiResponse(false, null, 'Unauthorized to delete this product', 403);
     }
 
     await prisma.product.delete({
       where: {
         id,
-        sellerId: user.seller.id, // Ensure seller owns the product
+        sellerId: seller.id,
       },
     });
 
-    return new NextResponse(null, { status: 204 });
+    return createApiResponse(true, null, 'Product deleted successfully', 200);
   } catch (error) {
     console.error('Delete Product Error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return createApiResponse(false, error, 'Failed to delete product', 500);
   }
 }

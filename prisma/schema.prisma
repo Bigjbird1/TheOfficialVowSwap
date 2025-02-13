@@ -42,7 +42,7 @@ model Product {
   name          String
   description   String        @db.Text
   price         Float
-  inventory     Int
+  quantity      Int          @map("inventory")
   sellerId      String
   seller        Seller        @relation(fields: [sellerId], references: [id])
   createdAt     DateTime      @default(now())
@@ -59,11 +59,24 @@ model Product {
   tags          String[]      @default([])
   images        String[]      @default([])
   bulkRequests  BulkPurchaseRequest[]
+  bulkDiscounts BulkDiscount[]
   
   @@index([sellerId])
   @@index([category])
   @@index([isActive])
   @@index([isNewArrival])
+}
+
+model BulkDiscount {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  minQuantity Int
+  discount    Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([productId])
 }
 
 model ProductView {
