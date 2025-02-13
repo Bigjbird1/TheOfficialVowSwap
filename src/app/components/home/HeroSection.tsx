@@ -150,7 +150,7 @@ export const HeroSection = () => {
             <div 
               className={`absolute inset-0 bg-gradient-to-r ${slide.overlayColor} to-transparent`}
             >
-              <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 h-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-16">
+              <div className="max-w-8xl mx-auto px-20 sm:px-24 lg:px-28 h-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-16">
                 <div className="text-white space-y-6">
                   <div className="space-y-4">
                     <h2 
