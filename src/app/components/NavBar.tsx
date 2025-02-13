@@ -102,7 +102,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
   return (
     <header className="border-b sticky top-0 bg-white z-50">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-14">
           <div className="flex items-center lg:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -113,7 +113,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
             </button>
           </div>
           <Link href="/">
-            <div className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent cursor-pointer">
+            <div className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent cursor-pointer">
               VowSwap
             </div>
           </Link>
@@ -125,7 +125,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
                   type="search"
                   placeholder="Search wedding decor items..."
                   aria-label="Search wedding decor items"
-                  className="w-full pl-12 pr-24 py-3 border rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
+                  className="w-full pl-12 pr-24 py-2 border rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   list="search-suggestions"
@@ -172,7 +172,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
           </div>
         </div>
 
-        <nav className="hidden lg:flex items-center gap-8 text-base py-3 overflow-x-auto relative border-t">
+        <nav className="hidden lg:flex items-center gap-4 text-base py-2 overflow-x-auto relative border-t">
           {navigationData.map((category) => (
 <div
   key={category.name}

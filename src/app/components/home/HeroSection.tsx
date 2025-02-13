@@ -123,7 +123,7 @@ export const HeroSection = () => {
 
   return (
     <section 
-      className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden" 
+      className="relative h-[400px] overflow-hidden" 
       aria-label="Featured promotions carousel"
     >
       {/* Slides */}
@@ -150,8 +150,8 @@ export const HeroSection = () => {
             <div 
               className={`absolute inset-0 bg-gradient-to-r ${slide.overlayColor} to-transparent`}
             >
-              <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center py-24">
-                <div className="max-w-2xl text-white space-y-6">
+              <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 h-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-16">
+                <div className="text-white space-y-6">
                   <div className="space-y-4">
                     <h2 
                       className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight animate-fade-in"
