@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import prisma from '@/lib/prisma'
 import { ReportStatus } from '@/app/types/moderation'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession()
     if (!session?.user || !['ADMIN', 'MODERATOR'].includes(session.user.role)) {
@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
         },
       }),
       
-      // Recent moderation actions
-      prisma.moderationAction.findMany({
+      // Recent moderation events
+      prisma.moderationEvent.findMany({
         take: 10,
         orderBy: {
           createdAt: 'desc',

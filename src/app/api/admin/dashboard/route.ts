@@ -17,7 +17,6 @@ export async function GET() {
       totalOrders,
       totalProducts,
       recentOrders,
-      pendingVerifications,
       revenue
     ] = await Promise.all([
       // Get total users count
@@ -43,8 +42,6 @@ export async function GET() {
           }
         }
       }),
-      // Get total sellers count (no verification status in schema)
-      prisma.seller.count(),
       // Calculate total revenue
       prisma.order.aggregate({
         _sum: {

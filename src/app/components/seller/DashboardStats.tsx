@@ -28,11 +28,22 @@ export default function DashboardStats() {
     const fetchDashboardData = async (retryCount = 0) => {
       try {
         setLoading(true);
-        const response = await fetch('/api/seller/dashboard');
+        const response = await fetch('/api/seller/dashboard', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
         
-        if (!response.ok) {
+        if (!response.ok || response.status === 204) {
           const errorText = await response.text();
           const statusCode = response.status;
+          
+          // Handle empty response
+          if (response.status === 204) {
+            console.log('No content received from dashboard API');
+            return { stats: getDummyData(), recentOrders: [] };
+          }
           
           // Log detailed error information
           console.error('Dashboard API Error:', {

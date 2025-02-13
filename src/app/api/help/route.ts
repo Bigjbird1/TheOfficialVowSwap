@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { ArticleStatus, SearchParams } from '@/app/types/help-center';
+import { ArticleStatus } from '@/app/types/help-center';
 import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {

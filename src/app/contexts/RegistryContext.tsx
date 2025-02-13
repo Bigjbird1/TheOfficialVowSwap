@@ -57,16 +57,91 @@ export function RegistryProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session]);
 
-  const fetchRegistry = async () => {
+  const fetchRegistry = async (retryCount = 0) => {
+    const MAX_RETRIES = 3;
+    const BASE_DELAY = 1000; // 1 second
+    
     try {
-      const response = await fetch('/api/registry');
-      if (!response.ok) throw new Error('Failed to fetch registry');
-      const data = await response.json();
-      setRegistry(data.registry);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch('/api/registry', {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+
+      // Check response content type
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          body: text
+        });
+        throw new Error('Server returned invalid response format');
+      }
+
+      if (!response.ok) {
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch registry');
+        } catch (jsonError) {
+          const text = await response.text();
+          console.error('Error parsing error response:', {
+            error: jsonError,
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries()),
+            body: text
+          });
+          throw new Error('Failed to fetch registry - invalid error format');
+        }
+      }
+      
+      try {
+        const text = await response.text();
+        // Validate JSON structure before parsing
+        if (!text.trim().startsWith('{') || !text.trim().endsWith('}')) {
+          console.error('Invalid JSON structure:', text);
+          throw new Error('Invalid JSON structure in response');
+        }
+        
+        const data = JSON.parse(text);
+        if (!data.registry) {
+          console.error('Missing registry in response:', data);
+          throw new Error('Response missing required registry data');
+        }
+        setRegistry(data.registry);
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            console.error('Request timed out');
+          } else {
+            console.error('Error fetching registry:', error.message);
+          }
+        } else {
+          console.error('Unknown error occurred:', error);
+        }
+        
+        if (retryCount < MAX_RETRIES) {
+          const delay = BASE_DELAY * Math.pow(2, retryCount);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchRegistry(retryCount + 1);
+        }
+        
+        // Set error state if all retries fail
+        setRegistry(null);
+        throw new Error('Failed to load registry after multiple attempts');
+      } finally {
+        setIsLoading(false);
+      }
     } catch (error) {
-      console.error('Error fetching registry:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error in fetchRegistry:', error);
+      setRegistry(null);
+      throw error;
     }
   };
 

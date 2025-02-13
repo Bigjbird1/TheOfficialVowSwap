@@ -28,6 +28,7 @@ model User {
   serviceBookings ServiceBooking[]
   bulkRequests    BulkPurchaseRequest[] @relation("BuyerRequests")
   notifications   Notification[]
+  registries      Registry[]
 }
 
 enum UserRole {
@@ -60,6 +61,7 @@ model Product {
   images        String[]      @default([])
   bulkRequests  BulkPurchaseRequest[]
   bulkDiscounts BulkDiscount[]
+  registryItems RegistryItem[]
   
   @@index([sellerId])
   @@index([category])
@@ -508,4 +510,37 @@ model Notification {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+model Registry {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isPublic    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  items       RegistryItem[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model RegistryItem {
+  id          String   @id @default(cuid())
+  registryId  String
+  registry    Registry @relation(fields: [registryId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int
+  priority    Int?     @default(1)
+  isPurchased Boolean  @default(false)
+  purchasedBy String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([registryId])
+  @@index([productId])
+  @@index([isPurchased])
 }

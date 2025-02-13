@@ -11,6 +11,8 @@ export async function GET() {
 
   try {
     // Get user's registry with items and product details
+    console.log('Fetching registry for user:', session.user.email);
+    
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
@@ -34,13 +36,27 @@ export async function GET() {
       },
     });
 
+    console.log('User registry data:', user?.registry);
+    
     if (!user?.registry) {
+      console.log('No registry found for user');
       return NextResponse.json({ registry: null });
     }
 
-    return NextResponse.json({ registry: user.registry });
+    // Test JSON serialization
+    const testData = { test: 'valid json' };
+    console.log('Test JSON serialization:', JSON.stringify(testData));
+
+    const registryData = { registry: user.registry };
+    console.log('Registry data to return:', registryData);
+    
+    return NextResponse.json(registryData);
   } catch (error) {
-    console.error('Error fetching registry:', error);
+    console.error('Error fetching registry:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      rawError: error
+    });
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

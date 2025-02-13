@@ -8,12 +8,6 @@ import { AddToRegistry } from "./components/registry/AddToRegistry"
 import RecommendedProducts from "./components/RecommendedProducts"
 import ItemDetails from "./components/ItemDetails"
 
-interface ProductImage {
-  id: string
-  url: string
-  alt: string
-}
-
 interface ProductDetails {
   id: string
   name: string

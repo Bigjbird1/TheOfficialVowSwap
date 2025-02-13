@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import prisma from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
 import { ReportStatus, ContentType } from '@/app/types/moderation'
 
 export async function GET(request: NextRequest) {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate')
 
     // Build the where clause based on filters
-    const where: any = {}
+    const where: Prisma.ContentReportWhereInput = {}
     if (status) where.status = status
     if (type) where.type = type
     if (startDate && endDate) {
@@ -56,8 +57,12 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json(reports)
-  } catch (error) {
-    console.error('Error fetching reports:', error)
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Error fetching reports:', error.message)
+    } else {
+      console.error('Unknown error fetching reports')
+    }
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
@@ -101,8 +106,12 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(report)
-  } catch (error) {
-    console.error('Error creating report:', error)
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Error creating report:', error.message)
+    } else {
+      console.error('Unknown error creating report')
+    }
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
