@@ -1,6 +1,10 @@
 import { Metadata } from "next"
 import { HeroSection } from "./components/home/HeroSection"
+import { TrustElements } from "./components/home/TrustElements"
 import { PopularProducts } from "./components/home/PopularProducts"
+import { ColorPalette } from "./components/home/ColorPalette"
+import { WeddingThemes } from "./components/home/WeddingThemes"
+import { SellerSection } from "./components/home/SellerSection"
 import { DealOfTheDay } from "./components/home/DealOfTheDay"
 import { FeaturedCategories } from "./components/home/FeaturedCategories"
 import { Testimonials } from "./components/home/Testimonials"
@@ -39,7 +43,11 @@ export default function MarketplaceHome() {
     <div className="min-h-screen bg-white">
       <main id="main-content" className="flex-grow">
         <HeroSection />
+        <TrustElements />
         <PopularProducts />
+        <ColorPalette />
+        <WeddingThemes />
+        <SellerSection />
         <DealOfTheDay />
         <FeaturedCategories />
         <Testimonials />

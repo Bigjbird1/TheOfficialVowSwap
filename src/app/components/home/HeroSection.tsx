@@ -8,6 +8,7 @@ import { useAuthRedirect } from "@/app/hooks/useAuthRedirect"
 interface SlideData {
   title: string
   subtitle: string
+  description?: string
   buttonText: string
   buttonUrl: string
   secondaryButton?: {
@@ -16,36 +17,73 @@ interface SlideData {
   }
   backgroundImage: string
   overlayColor: string
+  bestSellers?: {
+    image: string
+    name: string
+  }[]
 }
 
 const slides: SlideData[] = [
   {
-    title: "Wedding Season Deals",
-    subtitle: "Up to 40% off on premium decor collections",
-    buttonText: "Shop Deals",
-    buttonUrl: "/products?view=deals",
+    title: "Transform Your Wedding Vision",
+    subtitle: "Curated Collections for Your Perfect Day",
+    description: "Discover premium decor pieces that make your celebration unforgettable",
+    buttonText: "Shop Now",
+    buttonUrl: "/products",
     secondaryButton: {
       text: "Start Selling",
-      url: "#" // Will be handled by handleStartSelling
+      url: "#"
     },
-    backgroundImage: "/placeholder.svg?height=600&width=1920",
-    overlayColor: "from-black/60"
+    backgroundImage: "/images/hero/elegant-reception.jpg",
+    overlayColor: "from-black/60",
+    bestSellers: [
+      {
+        image: "/images/products/crystal-centerpiece.jpg",
+        name: "Crystal Centerpiece"
+      },
+      {
+        image: "/images/products/floral-arch.jpg",
+        name: "Floral Arch"
+      }
+    ]
   },
   {
-    title: "New Arrivals",
-    subtitle: "Just landed: Exclusive designer collections",
-    buttonText: "Discover Now",
-    buttonUrl: "/products?view=discover",
-    backgroundImage: "/placeholder.svg?height=600&width=1920",
-    overlayColor: "from-rose-900/60"
+    title: "Exclusive Designer Collections",
+    subtitle: "Just Arrived for Your Special Day",
+    description: "Hand-picked pieces from top wedding designers",
+    buttonText: "Explore New Arrivals",
+    buttonUrl: "/products?category=new",
+    backgroundImage: "/images/hero/luxury-setup.jpg",
+    overlayColor: "from-rose-900/60",
+    bestSellers: [
+      {
+        image: "/images/products/table-runner.jpg",
+        name: "Silk Table Runner"
+      },
+      {
+        image: "/images/products/candle-holders.jpg",
+        name: "Crystal Candle Holders"
+      }
+    ]
   },
   {
-    title: "Trending Items",
-    subtitle: "See what other couples are loving",
-    buttonText: "View Trending",
+    title: "Trending Wedding Themes",
+    subtitle: "Most-Loved by Our Couples",
+    description: "Get inspired by our most popular wedding decor themes",
+    buttonText: "View Collections",
     buttonUrl: "/products?view=trending",
-    backgroundImage: "/placeholder.svg?height=600&width=1920",
-    overlayColor: "from-gray-900/60"
+    backgroundImage: "/images/hero/garden-wedding.jpg",
+    overlayColor: "from-gray-900/60",
+    bestSellers: [
+      {
+        image: "/images/products/string-lights.jpg",
+        name: "LED String Lights"
+      },
+      {
+        image: "/images/products/lanterns.jpg",
+        name: "Vintage Lanterns"
+      }
+    ]
   }
 ]
 
@@ -85,7 +123,7 @@ export const HeroSection = () => {
 
   return (
     <section 
-      className="relative h-[300px] md:h-[375px] lg:h-[450px] overflow-hidden" 
+      className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden" 
       aria-label="Featured promotions carousel"
     >
       {/* Slides */}
@@ -113,24 +151,58 @@ export const HeroSection = () => {
               className={`absolute inset-0 bg-gradient-to-r ${slide.overlayColor} to-transparent`}
             >
               <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center py-24">
-                <div className="max-w-2xl text-white">
-                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 tracking-tight">
-                    {slide.title}
-                  </h2>
-                  <p className="text-base sm:text-lg mb-4 leading-relaxed opacity-90">
-                    {slide.subtitle}
-                  </p>
-                  <div className="flex gap-4">
+                <div className="max-w-2xl text-white space-y-6">
+                  <div className="space-y-4">
+                    <h2 
+                      className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight animate-fade-in"
+                      style={{
+                        textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+                        animation: "fadeSlideUp 0.8s ease-out forwards"
+                      }}
+                    >
+                      {slide.title}
+                    </h2>
+                    <p 
+                      className="text-xl sm:text-2xl font-medium leading-relaxed opacity-90"
+                      style={{
+                        animation: "fadeSlideUp 0.8s ease-out 0.2s forwards",
+                        opacity: 0,
+                        transform: "translateY(20px)"
+                      }}
+                    >
+                      {slide.subtitle}
+                    </p>
+                    {slide.description && (
+                      <p 
+                        className="text-lg text-gray-100 leading-relaxed max-w-xl"
+                        style={{
+                          animation: "fadeSlideUp 0.8s ease-out 0.4s forwards",
+                          opacity: 0,
+                          transform: "translateY(20px)"
+                        }}
+                      >
+                        {slide.description}
+                      </p>
+                    )}
+                  </div>
+                  <div 
+                    className="flex gap-4"
+                    style={{
+                      animation: "fadeSlideUp 0.8s ease-out 0.6s forwards",
+                      opacity: 0,
+                      transform: "translateY(20px)"
+                    }}
+                  >
                     <Link 
                       href={slide.buttonUrl}
-                      className="inline-block px-6 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transform hover:scale-105 transition duration-300 shadow-lg hover:shadow-xl"
+                      className="inline-block px-8 py-3 bg-rose-500 text-white rounded-full hover:bg-rose-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl text-lg font-medium"
                     >
                       {slide.buttonText}
                     </Link>
                     {slide.secondaryButton && (
                       <button 
                         onClick={handleStartSelling}
-                        className="inline-block px-6 py-2 bg-white text-rose-500 rounded-full hover:bg-gray-100 transform hover:scale-105 transition duration-300 shadow-lg hover:shadow-xl"
+                        className="inline-block px-8 py-3 bg-white text-rose-500 rounded-full hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl text-lg font-medium"
                       >
                         {slide.secondaryButton.text}
                       </button>
@@ -142,6 +214,34 @@ export const HeroSection = () => {
           </div>
         ))}
       </div>
+
+      {/* Best Sellers Preview */}
+      {slides[currentSlide].bestSellers && (
+        <div 
+          className="absolute bottom-8 right-8 z-20 hidden lg:flex gap-4"
+          style={{
+            animation: "fadeSlideUp 0.8s ease-out 0.8s forwards",
+            opacity: 0,
+            transform: "translateY(20px)"
+          }}
+        >
+          {slides[currentSlide].bestSellers.map((item, index) => (
+            <div 
+              key={index}
+              className="w-24 h-24 relative rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
+            >
+              <Image
+                src={item.image}
+                alt={item.name}
+                fill
+                className="object-cover"
+                sizes="96px"
+              />
+              <div className="absolute inset-0 bg-black/30 hover:bg-black/20 transition-colors duration-300" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Navigation Arrows */}
       <button
