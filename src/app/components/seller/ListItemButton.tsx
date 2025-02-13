@@ -41,7 +41,7 @@ export default function ListItemButton() {
     <>
       <button
         onClick={() => setShowForm(true)}
-        className="px-6 py-3 text-base font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+        className="px-6 py-3 text-base font-medium text-white bg-gradient-to-r from-rose-500 to-purple-600 rounded-xl hover:from-rose-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-all shadow-lg shadow-gray-200/50"
         aria-label="List an Item"
       >
         List an Item
@@ -49,8 +49,8 @@ export default function ListItemButton() {
 
       {showForm && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">New Product</h3>
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg shadow-gray-200/50 border border-gray-100">
+            <h3 className="text-lg font-semibold bg-gradient-to-r from-rose-500 to-purple-600 bg-clip-text text-transparent mb-4">New Product</h3>
             {isLoading ? (
               <div className="text-center py-4">Loading categories...</div>
             ) : error ? (

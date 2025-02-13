@@ -47,15 +47,23 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
     }));
   };
 
+  const inputClasses = "mt-1 block w-full rounded-xl border-gray-200 shadow-sm focus:border-rose-500 focus:ring focus:ring-rose-500/20 bg-white";
+  const buttonClasses = {
+    primary: "px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-rose-500 to-purple-600 rounded-xl hover:from-rose-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-all shadow-lg shadow-rose-200/50",
+    secondary: "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 shadow-sm",
+    danger: "px-3 py-1 text-sm font-medium text-red-600 hover:text-red-800 transition-colors",
+    link: "text-sm font-medium text-rose-600 hover:text-rose-800 transition-colors"
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700">Name</label>
         <input
           type="text"
           value={formData.name}
           onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className={inputClasses}
           required
         />
       </div>
@@ -65,7 +73,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
         <textarea
           value={formData.description}
           onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className={inputClasses}
           rows={3}
           required
         />
@@ -78,7 +86,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
             type="number"
             value={formData.price}
             onChange={e => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className={inputClasses}
             min="0"
             step="0.01"
             required
@@ -91,7 +99,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
             type="number"
             value={formData.quantity}
             onChange={e => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) }))}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className={inputClasses}
             min="0"
             required
           />
@@ -103,7 +111,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
         <select
           value={formData.categoryId}
           onChange={e => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className={inputClasses}
           required
         >
           {(categories || []).map(category => (
@@ -127,7 +135,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
                   newImages[index] = e.target.value;
                   setFormData(prev => ({ ...prev, images: newImages }));
                 }}
-                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputClasses}
               />
               <button
                 type="button"
@@ -135,7 +143,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
                   ...prev,
                   images: prev.images.filter((_, i) => i !== index)
                 }))}
-                className="px-2 py-1 text-sm text-red-600 hover:text-red-800"
+                className={buttonClasses.danger}
               >
                 Remove
               </button>
@@ -144,7 +152,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
           <button
             type="button"
             onClick={() => setFormData(prev => ({ ...prev, images: [...prev.images, ''] }))}
-            className="text-sm text-indigo-600 hover:text-indigo-800"
+            className={buttonClasses.link}
           >
             Add Image URL
           </button>
@@ -161,7 +169,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
             tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)
           }))}
           placeholder="Enter tags separated by commas"
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className={inputClasses}
         />
       </div>
 
@@ -171,7 +179,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
           <button
             type="button"
             onClick={addBulkDiscount}
-            className="text-sm text-indigo-600 hover:text-indigo-800"
+            className={buttonClasses.link}
           >
             Add Discount
           </button>
@@ -191,7 +199,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
                   setFormData(prev => ({ ...prev, bulkDiscounts: newDiscounts }));
                 }}
                 placeholder="Min Quantity"
-                className="w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputClasses}
                 min="1"
               />
               <input
@@ -206,7 +214,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
                   setFormData(prev => ({ ...prev, bulkDiscounts: newDiscounts }));
                 }}
                 placeholder="Discount %"
-                className="w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className={inputClasses}
                 min="0"
                 max="100"
                 step="0.1"
@@ -214,7 +222,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
               <button
                 type="button"
                 onClick={() => removeBulkDiscount(index)}
-                className="px-2 py-1 text-sm text-red-600 hover:text-red-800"
+                className={buttonClasses.danger}
               >
                 Remove
               </button>
@@ -227,13 +235,13 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          className={buttonClasses.secondary}
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
+          className={buttonClasses.primary}
         >
           {initialData ? 'Update Product' : 'Create Product'}
         </button>

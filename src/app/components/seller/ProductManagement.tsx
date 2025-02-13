@@ -77,7 +77,7 @@ export default function ProductManagement() {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-  }, []); // Remove function dependencies since they don't depend on props/state
+  }, []);
 
   const handleCreateProduct = async (data: ProductFormData) => {
     try {
@@ -132,20 +132,29 @@ export default function ProductManagement() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading...</div>;
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-pulse">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="bg-gray-200 rounded-xl h-64"></div>
+        ))}
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-600 text-center py-8">{error}</div>;
+    return (
+      <div className="rounded-xl bg-red-50 p-6 text-center shadow-lg shadow-gray-200/50 border border-red-100">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Product Management</h2>
         <button
           onClick={() => setIsFormVisible(true)}
-          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+          className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-rose-500 to-purple-600 rounded-xl hover:from-rose-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-all shadow-lg shadow-rose-200/50"
           aria-label="Add New Product"
           data-testid="add-product-button"
         >
@@ -154,8 +163,8 @@ export default function ProductManagement() {
       </div>
 
       {(isFormVisible || editingProduct) && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg shadow-gray-200/50 border border-gray-100">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               {editingProduct ? 'Edit Product' : 'New Product'}
             </h3>
@@ -176,20 +185,20 @@ export default function ProductManagement() {
         {products.map(product => (
           <div
             key={product.id}
-            className="bg-white rounded-lg shadow p-6 space-y-4"
+            className="bg-white rounded-xl shadow-lg shadow-gray-200/50 p-6 space-y-4 border border-gray-100"
           >
             <div className="aspect-w-16 aspect-h-9 mb-4">
               <img
                 src={product.images[0] || '/placeholder.jpg'}
                 alt={product.name}
-                className="object-cover rounded-md"
+                className="object-cover rounded-xl"
               />
             </div>
             <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
             <p className="text-sm text-gray-500">{product.description}</p>
             <div className="flex justify-between items-center">
               <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
-              <span className={`px-2 py-1 rounded-full text-sm ${
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                 product.quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
               }`}>
                 {product.quantity > 0 ? `${product.quantity} in stock` : 'Out of stock'}
@@ -198,13 +207,13 @@ export default function ProductManagement() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setEditingProduct(product)}
-                className="px-3 py-1 text-sm text-indigo-600 hover:text-indigo-800"
+                className="px-3 py-1 text-sm font-medium text-rose-600 hover:text-rose-800 transition-colors"
               >
                 Edit
               </button>
               <button
                 onClick={() => handleDeleteProduct(product.id)}
-                className="px-3 py-1 text-sm text-red-600 hover:text-red-800"
+                className="px-3 py-1 text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
               >
                 Delete
               </button>

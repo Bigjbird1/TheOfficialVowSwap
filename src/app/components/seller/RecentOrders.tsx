@@ -104,8 +104,44 @@ export default function RecentOrders() {
     });
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (!data) return <div>Failed to load orders</div>;
+  if (loading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="flex gap-4 mb-4">
+          <div className="h-10 w-32 bg-gray-200 rounded-xl"></div>
+          <div className="h-10 w-32 bg-gray-200 rounded-xl"></div>
+        </div>
+        <div className="overflow-hidden rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50">
+          <div className="bg-gray-50 px-6 py-3">
+            <div className="grid grid-cols-5 gap-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="px-6 py-4">
+                <div className="grid grid-cols-5 gap-4">
+                  {[...Array(5)].map((_, j) => (
+                    <div key={j} className="h-4 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="rounded-xl bg-gray-50 p-6 text-center shadow-lg shadow-gray-200/50 border border-gray-100">
+        <p className="text-gray-500">Failed to load orders</p>
+      </div>
+    );
+  }
 
   const filteredOrders = filterOrders(data.recentOrders);
 
@@ -113,7 +149,7 @@ export default function RecentOrders() {
     <div className="space-y-4">
       <div className="flex gap-4 mb-4">
         <select
-          className="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          className="rounded-xl border-gray-200 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 bg-white"
           value={filters.status}
           onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
         >
@@ -126,7 +162,7 @@ export default function RecentOrders() {
         </select>
 
         <select
-          className="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          className="rounded-xl border-gray-200 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 bg-white"
           value={filters.dateRange}
           onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
         >
@@ -137,7 +173,7 @@ export default function RecentOrders() {
         </select>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-hidden rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -178,7 +214,7 @@ export default function RecentOrders() {
                     <span className="text-sm text-gray-500">Updating...</span>
                   ) : (
                     <select
-                      className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)} border-0 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                      className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(order.status)} border-0 focus:ring-2 focus:ring-offset-2 focus:ring-primary/50`}
                       value={order.status}
                       onChange={(e) => handleStatusChange(order.id, e.target.value as OrderUpdateData['status'])}
                     >

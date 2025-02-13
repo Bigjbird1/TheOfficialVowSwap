@@ -110,8 +110,10 @@ export default function DashboardStats() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+        ))}
       </div>
     );
   }
@@ -120,7 +122,7 @@ export default function DashboardStats() {
     const isEmptyData = !error && (!data?.stats || Object.keys(data?.stats || {}).length === 0);
     
     return (
-      <div className={`p-6 ${error ? 'bg-red-50' : 'bg-gray-50'} rounded-lg`}>
+      <div className={`p-6 ${error ? 'bg-red-50' : 'bg-gray-50'} rounded-xl shadow-lg shadow-gray-200/50 border border-gray-100`}>
         <div className="flex items-start">
           <div className="flex-shrink-0">
             {error ? (
@@ -221,7 +223,7 @@ export default function DashboardStats() {
         {statCards.map((card, index) => (
           <div
             key={index}
-            className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+            className="bg-white rounded-xl shadow-lg shadow-gray-200/50 p-6 border border-gray-100"
           >
             <h3 className="text-sm font-medium text-gray-500">{card.title}</h3>
             <p className="mt-2 text-3xl font-semibold text-gray-900">
@@ -233,31 +235,35 @@ export default function DashboardStats() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AreaChart
-          title="Revenue Overview"
-          data={[
-            { date: new Date().toISOString().split('T')[0], value: stats.revenue.daily, label: 'Today' },
-            { date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], value: stats.revenue.weekly, label: 'Last 7 Days' },
-            { date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], value: stats.revenue.monthly, label: 'Last 30 Days' },
-          ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())}
-          areas={[
-            {
-              key: 'value',
-              name: 'Revenue ($)',
-              color: '#3b82f6',
-            },
-          ]}
-          xAxisKey="date"
-        />
+        <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 p-6 border border-gray-100">
+          <AreaChart
+            title="Revenue Overview"
+            data={[
+              { date: new Date().toISOString().split('T')[0], value: stats.revenue.daily, label: 'Today' },
+              { date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], value: stats.revenue.weekly, label: 'Last 7 Days' },
+              { date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], value: stats.revenue.monthly, label: 'Last 30 Days' },
+            ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())}
+            areas={[
+              {
+                key: 'value',
+                name: 'Revenue ($)',
+                color: '#3b82f6',
+              },
+            ]}
+            xAxisKey="date"
+          />
+        </div>
 
-        <PieChart
-          title="Order Status Distribution"
-          data={getOrderStatusData()}
-          height={300}
-        />
+        <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 p-6 border border-gray-100">
+          <PieChart
+            title="Order Status Distribution"
+            data={getOrderStatusData()}
+            height={300}
+          />
+        </div>
       </div>
 
-      <div className="mt-6">
+      <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 p-6 border border-gray-100">
         <BarChart
           title="Top Products Performance"
           data={getTopProductsData().map(item => ({
