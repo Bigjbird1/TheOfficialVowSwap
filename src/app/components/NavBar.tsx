@@ -181,7 +181,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
   className="relative group flex flex-col items-center"
 >
               <Link
-                href={category.name === "All Items" ? "/products" : `/products?categories=${category.name.toLowerCase()}`}
+                href={category.href}
                 className={`text-gray-600 hover:text-gray-900 transition-colors duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full px-4 py-2 ${
                   hoveredCategory === category.name ? "bg-pink-500 text-white font-medium" : ""
                 } group-hover:text-gray-900 group-hover:font-medium flex items-center`}

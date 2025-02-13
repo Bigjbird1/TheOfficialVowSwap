@@ -1,7 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { requestNotificationPermission, onMessageListener } from '@/lib/firebase';
+import { requestNotificationPermission, onMessageListener, getFirebaseMessaging } from '@/lib/firebase';
+
+type NotificationPayload = {
+  notification?: {
+    title?: string;
+    body?: string;
+  };
+  data?: Record<string, string>;
+};
 
 export const usePushNotifications = () => {
   const [token, setToken] = useState<string | null>(null);
@@ -9,9 +17,21 @@ export const usePushNotifications = () => {
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
 
   useEffect(() => {
-    // Check if the browser supports notifications
+    // Check if running in browser
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    // Check if notifications are supported
     if (!('Notification' in window)) {
       console.log('This browser does not support notifications');
+      return;
+    }
+
+    // Check if Firebase is configured
+    const messaging = getFirebaseMessaging();
+    if (!messaging) {
+      console.log('Push notifications are not configured');
       return;
     }
 
@@ -21,6 +41,12 @@ export const usePushNotifications = () => {
     // Request permission and get token if granted
     const setupNotifications = async () => {
       try {
+        const messaging = getFirebaseMessaging();
+        if (!messaging) {
+          console.log('Push notifications are not available');
+          return;
+        }
+
         const fcmToken = await requestNotificationPermission();
         if (fcmToken) {
           setToken(fcmToken);
@@ -38,9 +64,13 @@ export const usePushNotifications = () => {
   }, [permissionStatus]);
 
   useEffect(() => {
-    // Set up foreground message handler
-    const unsubscribe = onMessageListener();
+    // Set up foreground message handler only if Firebase is configured
+    const messaging = getFirebaseMessaging();
+    if (!messaging) {
+      return;
+    }
 
+    const unsubscribe = onMessageListener();
     return () => {
       unsubscribe();
     };

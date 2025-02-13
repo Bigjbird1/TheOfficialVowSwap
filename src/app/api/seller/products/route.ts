@@ -39,7 +39,6 @@ export async function POST(request: Request) {
     const data: ProductFormData = await request.json();
 
     const productData = {
-      sellerId: seller.id,
       name: data.name,
       description: data.description,
       price: data.price,
@@ -47,7 +46,16 @@ export async function POST(request: Request) {
       inventory: data.quantity,
       tags: data.tags,
       images: data.images,
-    };
+      seller: {
+        connect: {
+          id: seller.id
+        }
+      },
+      isActive: true,
+      isNewArrival: true,
+      popularity: 0,
+      rating: null
+    } as const;
 
     const product = await prisma.product.create({
       data: productData,
@@ -108,7 +116,7 @@ export async function PUT(request: Request) {
       inventory: data.quantity,
       tags: data.tags,
       images: data.images,
-    };
+    } as const;
 
     const product = await prisma.product.update({
       where: {

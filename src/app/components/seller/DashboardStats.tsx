@@ -4,29 +4,148 @@ import { useEffect, useState } from 'react';
 import { SellerDashboardData } from '@/app/types/seller';
 import { AreaChart, BarChart, PieChart } from '@/app/components/charts';
 
+// Development-only dummy data
+const getDummyData = () => ({
+  revenue: {
+    total: 0,
+    monthly: 0,
+    weekly: 0,
+    daily: 0
+  },
+  activeProducts: 0,
+  totalProducts: 0,
+  pendingOrders: 0,
+  totalOrders: 0,
+  topProducts: []
+});
+
 export default function DashboardStats() {
   const [data, setData] = useState<SellerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = async (retryCount = 0) => {
       try {
+        setLoading(true);
         const response = await fetch('/api/seller/dashboard');
-        if (!response.ok) throw new Error('Failed to fetch dashboard data');
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          const statusCode = response.status;
+          
+          // Log detailed error information
+          console.error('Dashboard API Error:', {
+            status: statusCode,
+            statusText: response.statusText,
+            error: errorText,
+            timestamp: new Date().toISOString()
+          });
+
+          // Handle specific error cases
+          if (statusCode === 401) {
+            throw new Error('Please sign in to access the dashboard');
+          } else if (statusCode === 403) {
+            throw new Error('You do not have permission to access the dashboard');
+          } else if (statusCode === 404) {
+            // Return empty state data instead of throwing error
+            return { stats: getDummyData(), recentOrders: [] };
+          }
+
+          // For 5xx errors, attempt retry
+          if (statusCode >= 500 && retryCount < 3) {
+            throw new Error('RETRY');
+          }
+
+          throw new Error(errorText || `Failed to fetch dashboard data (${statusCode})`);
+        }
+
         const dashboardData = await response.json();
-        setData(dashboardData);
+        
+        // Check if the response is empty or missing required data
+        if (!dashboardData || !dashboardData.stats) {
+          console.log('Empty dashboard data received:', dashboardData);
+          return { stats: getDummyData(), recentOrders: [] };
+        }
+
+        return dashboardData;
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        if (error instanceof Error && error.message === 'RETRY' && retryCount < 3) {
+          console.log(`Retrying dashboard fetch (attempt ${retryCount + 1}/3)...`);
+          setTimeout(() => fetchDashboardData(retryCount + 1), 1000 * (retryCount + 1));
+          return;
+        }
+
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch dashboard data';
+        console.error('Dashboard Error:', {
+          error: errorMessage,
+          retryCount,
+          timestamp: new Date().toISOString()
+        });
+        setError(errorMessage);
+        return null;
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDashboardData();
+    fetchDashboardData().then(result => {
+      if (result) {
+        setData(result);
+        setError(null);
+      }
+    });
   }, []);
 
-  if (loading) return <div>Loading...</div>;
-  if (!data) return <div>Failed to load dashboard data</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!data || error) {
+    const isEmptyData = !error && (!data?.stats || Object.keys(data?.stats || {}).length === 0);
+    
+    return (
+      <div className={`p-6 ${error ? 'bg-red-50' : 'bg-gray-50'} rounded-lg`}>
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            {error ? (
+              <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+          </div>
+          <div className="ml-3">
+            <h3 className={`text-sm font-medium ${error ? 'text-red-800' : 'text-gray-800'}`}>
+              {error ? 'Dashboard Error' : 'No Dashboard Data'}
+            </h3>
+            <div className={`mt-2 text-sm ${error ? 'text-red-700' : 'text-gray-600'}`}>
+              <p>{error || (isEmptyData ? 'No dashboard data available yet. Start selling to see your statistics here!' : 'Failed to load dashboard data')}</p>
+            </div>
+            <div className="mt-4">
+              <button
+                onClick={() => window.location.reload()}
+                className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md ${
+                  error 
+                    ? 'text-red-700 bg-red-100 hover:bg-red-200 focus:ring-red-500' 
+                    : 'text-gray-700 bg-gray-100 hover:bg-gray-200 focus:ring-gray-500'
+                } focus:outline-none focus:ring-2 focus:ring-offset-2`}
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const { stats } = data;
 

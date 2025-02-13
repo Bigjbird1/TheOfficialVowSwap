@@ -5,6 +5,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import DashboardStats from '@/app/components/seller/DashboardStats';
 import RecentOrders from '@/app/components/seller/RecentOrders';
 import ProductManagement from '@/app/components/seller/ProductManagement';
+import ListItemButton from '@/app/components/seller/ListItemButton';
 import prisma from '@/lib/prisma';
 
 export default async function SellerDashboard() {
@@ -25,7 +26,10 @@ export default async function SellerDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Seller Dashboard</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Seller Dashboard</h1>
+        <ListItemButton />
+      </div>
       
       <div className="grid gap-6">
         <Suspense fallback={<div>Loading stats...</div>}>
@@ -41,7 +45,7 @@ export default async function SellerDashboard() {
           </Suspense>
 
           <Suspense fallback={<div>Loading products...</div>}>
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-6" data-testid="product-management">
               <h2 className="text-xl font-semibold mb-4">Product Management</h2>
               <ProductManagement />
             </div>
