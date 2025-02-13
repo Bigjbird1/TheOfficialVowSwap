@@ -10,9 +10,8 @@ import { Product } from "../types";
 interface FilterState {
   category: string;
   subcategory: string;
-  brand: string;
   size: string;
-  colour: string;
+  color: string;
   condition: string;
   minPrice: string;
   maxPrice: string;
@@ -39,9 +38,8 @@ export default function ProductsClient({ products, searchParams }: ProductsClien
     let initialFilters: FilterState = {
       category: getSearchParam("category"),
       subcategory: getSearchParam("subcategory"),
-      brand: getSearchParam("brand"),
       size: getSearchParam("size"),
-      colour: getSearchParam("colour"),
+      color: getSearchParam("color"),
       condition: getSearchParam("condition"),
       minPrice: getSearchParam("minPrice"),
       maxPrice: getSearchParam("maxPrice"),
@@ -78,9 +76,6 @@ export default function ProductsClient({ products, searchParams }: ProductsClien
     if (updatedFilters.category && updatedFilters.category !== "") {
       queryParams.append('categories', updatedFilters.category);
     }
-    if (updatedFilters.brand && updatedFilters.brand !== "") {
-      queryParams.append('themes', updatedFilters.brand);
-    }
     if (updatedFilters.minPrice && updatedFilters.minPrice !== "") {
       queryParams.append('minPrice', updatedFilters.minPrice);
     }
@@ -105,13 +100,12 @@ export default function ProductsClient({ products, searchParams }: ProductsClien
     const queryParams = new URLSearchParams();
     
     if (newFilters.category) queryParams.append('categories', newFilters.category);
-    if (newFilters.brand) queryParams.append('themes', newFilters.brand);
     if (newFilters.price) {
       const [min, max] = newFilters.price.split('-');
       if (min) queryParams.append('minPrice', min);
       if (max) queryParams.append('maxPrice', max);
     }
-    if (newFilters.colour) queryParams.append('colour', newFilters.colour);
+    if (newFilters.color) queryParams.append('color', newFilters.color);
     if (newFilters.condition) queryParams.append('condition', newFilters.condition);
     if (newFilters.size) queryParams.append('size', newFilters.size);
     

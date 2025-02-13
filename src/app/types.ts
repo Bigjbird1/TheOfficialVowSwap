@@ -53,6 +53,9 @@ export interface Product {
   price: number
   description: string
   category: string
+  size?: string
+  color?: string
+  condition?: string
   rating: number
   reviewCount: number
   stockStatus: string

@@ -16,9 +16,8 @@ interface ProductGridProps {
   filters?: {
     category: string;
     subcategory: string;
-    brand: string;
     size: string;
-    colour: string;
+    color: string;
     condition: string;
     minPrice: string;
     maxPrice: string;
@@ -77,7 +76,23 @@ export default function ProductGrid({
   // Filter products based on filter criteria
   const filteredProducts = products.filter(product => {
     if (filters) {
-      if (filters.category && filters.category !== "" && product.category.toLowerCase() !== filters.category.toLowerCase()) {
+      if (filters.category && filters.category !== "" && 
+          product.category.toLowerCase() !== filters.category.toLowerCase()) {
+        return false;
+      }
+      
+      if (filters.size && filters.size !== "" && 
+          product.size?.toLowerCase() !== filters.size.toLowerCase()) {
+        return false;
+      }
+      
+      if (filters.color && filters.color !== "" && 
+          product.color?.toLowerCase() !== filters.color.toLowerCase()) {
+        return false;
+      }
+      
+      if (filters.condition && filters.condition !== "" && 
+          product.condition?.toLowerCase() !== filters.condition.toLowerCase()) {
         return false;
       }
       
@@ -88,8 +103,6 @@ export default function ProductGrid({
       if (filters.maxPrice && parseFloat(filters.maxPrice) < product.price) {
         return false;
       }
-      
-      // Add other filter conditions as needed
     }
     
     return true;

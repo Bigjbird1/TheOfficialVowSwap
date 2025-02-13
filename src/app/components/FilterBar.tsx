@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, ChevronDown, X, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from './ui/dropdown-menu';
 
 export interface FilterOption {
   id: string;
   label: string;
-  count: number;
 }
 
 export interface FilterCategory {
@@ -16,29 +21,57 @@ export interface FilterCategory {
 export interface FilterBarFilters {
   category?: string;
   price?: string;
-  brand?: string;
-  colour?: string;
-  condition?: string;
   size?: string;
+  color?: string;
+  condition?: string;
 }
 
 const FILTER_CATEGORIES: FilterCategory[] = [
   {
     name: 'Category',
     options: [
-      { id: 'decor', label: 'Decor', count: 128 },
-      { id: 'lighting', label: 'Lighting', count: 85 },
-      { id: 'furniture', label: 'Furniture', count: 64 },
-      { id: 'tableware', label: 'Tableware', count: 42 },
+      { id: 'decor', label: 'Decor' },
+      { id: 'lighting', label: 'Lighting' },
+      { id: 'furniture', label: 'Furniture' },
+      { id: 'tableware', label: 'Tableware' },
     ],
   },
   {
     name: 'Price',
     options: [
-      { id: 'under-50', label: 'Under $50', count: 156 },
-      { id: '50-100', label: '$50 - $100', count: 143 },
-      { id: '100-200', label: '$100 - $200', count: 89 },
-      { id: 'over-200', label: '$200+', count: 45 },
+      { id: 'under-50', label: 'Under $50' },
+      { id: '50-100', label: '$50 - $100' },
+      { id: '100-200', label: '$100 - $200' },
+      { id: 'over-200', label: '$200+' },
+    ],
+  },
+  {
+    name: 'Size',
+    options: [
+      { id: 'small', label: 'Small' },
+      { id: 'medium', label: 'Medium' },
+      { id: 'large', label: 'Large' },
+      { id: 'xlarge', label: 'Extra Large' },
+    ],
+  },
+  {
+    name: 'Color',
+    options: [
+      { id: 'white', label: 'White' },
+      { id: 'ivory', label: 'Ivory' },
+      { id: 'gold', label: 'Gold' },
+      { id: 'silver', label: 'Silver' },
+      { id: 'rose-gold', label: 'Rose Gold' },
+      { id: 'black', label: 'Black' },
+    ],
+  },
+  {
+    name: 'Condition',
+    options: [
+      { id: 'new', label: 'New' },
+      { id: 'like-new', label: 'Like New' },
+      { id: 'good', label: 'Good' },
+      { id: 'fair', label: 'Fair' },
     ],
   },
 ];
@@ -110,37 +143,41 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
             </button>
           </div>
 
-          {/* Desktop Filter Pills */}
-          <div className="hidden md:flex overflow-x-auto pb-4 gap-3 scrollbar-hide">
+          {/* Desktop Filter Dropdowns */}
+          <div className="hidden md:flex items-center gap-4 pb-4">
             {FILTER_CATEGORIES.map(category => (
-              <div key={category.name} className="flex flex-col gap-2">
-                <div className="flex gap-2">
+              <DropdownMenu key={category.name}>
+                <DropdownMenuTrigger className="min-w-[140px] px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-rose-200 hover:bg-rose-50/50 focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all duration-200">
+                  <div className="flex items-center justify-between gap-2">
+                    <span>{activeFilters[category.name] 
+                      ? FILTER_CATEGORIES.find(c => c.name === category.name)?.options.find(o => o.id === activeFilters[category.name])?.label 
+                      : category.name}
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
                   {category.options.map(option => (
-                    <motion.button
+                    <DropdownMenuItem
                       key={option.id}
+                      selected={activeFilters[category.name] === option.id}
                       onClick={() => handleFilterClick(category.name, option.id)}
-                      className={`group relative inline-flex items-center px-4 py-2 rounded-full text-sm
-                                transition-all duration-200 ${
-                        activeFilters[category.name] === option.id
-                          ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg'
-                          : 'bg-gradient-to-r from-violet-50 to-fuchsia-50 text-gray-700 hover:shadow-md'
-                      }`}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                     >
                       {option.label}
-                      <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                        activeFilters[category.name] === option.id
-                          ? 'bg-white/20 text-white'
-                          : 'bg-gray-200 text-gray-700'
-                      }`}>
-                        {option.count}
-                      </span>
-                    </motion.button>
+                    </DropdownMenuItem>
                   ))}
-                </div>
-              </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ))}
+            
+            {Object.keys(activeFilters).length > 0 && (
+              <button
+                onClick={clearAllFilters}
+                className="px-4 py-2.5 text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50/50 rounded-lg transition-colors duration-200"
+              >
+                Clear all
+              </button>
+            )}
           </div>
         </div>
         {/* Mobile Filters Drawer */}
@@ -175,13 +212,6 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
                           }`}
                         >
                           {option.label}
-                          <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                            activeFilters[category.name] === option.id
-                              ? 'bg-white/20 text-white'
-                              : 'bg-gray-200 text-gray-700'
-                          }`}>
-                            {option.count}
-                          </span>
                         </button>
                       ))}
                     </div>
