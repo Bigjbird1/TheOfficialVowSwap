@@ -1,7 +1,7 @@
 "use client";
 
 import type { WeddingService } from '@/app/types/wedding-services';
-import VendorCard from './VendorCard';
+import { VendorCard } from './VendorCard';
 
 interface VendorResultsProps {
   services: WeddingService[];
