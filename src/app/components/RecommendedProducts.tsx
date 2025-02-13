@@ -11,7 +11,7 @@ interface RecommendedProductsProps {
   title?: string
 }
 
-export default function RecommendedProducts({ 
+export default function RecommendedProducts({
   currentProductId,
   cartItemIds,
   maxItems = 4,
@@ -22,70 +22,71 @@ export default function RecommendedProducts({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Create an AbortController to cancel fetch requests if the component unmounts
+    const controller = new AbortController()
+    const signal = controller.signal
+
     async function fetchRecommendations() {
       try {
         setIsLoading(true)
         setError(null)
+        let products: Product[] = []
 
-        // If we have a current product, fetch related products by category
+        // Helper function to fetch with error checking
+        async function safeFetch(url: string) {
+          const res = await fetch(url, { signal })
+          if (!res.ok) {
+            throw new Error(`Failed to fetch ${url}`)
+          }
+          return res.json()
+        }
+
         if (currentProductId) {
-          const response = await fetch(`/api/products/${currentProductId}`)
-          const currentProduct = await response.json()
-          
-          // Fetch products in the same category
-          const categoryResponse = await fetch(`/api/products?category=${currentProduct.category}&limit=${maxItems + 1}`)
-          const categoryData = await categoryResponse.json() as { products: Product[] }
-          let products = categoryData.products
-          
-          // Remove the current product from recommendations if present
-          products = products.filter((p: Product) => p.id !== currentProductId)
-          
-          // Limit to maxItems
-          setRecommendedProducts(products.slice(0, maxItems))
-        }
-        // If we have cart items, fetch complementary products
-        else if (cartItemIds?.length) {
-          // Fetch full product data for cart items to get their categories
-          const cartProductsPromises = cartItemIds.map(id =>
-            fetch(`/api/products/${id}`).then(res => res.json())
+          // Fetch the current product to get its category
+          const currentProduct = await safeFetch(`/api/products/${currentProductId}`)
+          // Fetch products in the same category (adding one extra to account for the current product)
+          const categoryData = await safeFetch(
+            `/api/products?category=${currentProduct.category}&limit=${maxItems + 1}`
           )
-          const cartProducts = await Promise.all(cartProductsPromises)
-          
-          // Get unique categories from cart products
+          products = categoryData.products as Product[]
+          // Remove the current product and limit the results
+          products = products.filter(p => p.id !== currentProductId).slice(0, maxItems)
+        } else if (cartItemIds && cartItemIds.length > 0) {
+          // Fetch detailed data for each cart item concurrently
+          const cartProducts = await Promise.all(
+            cartItemIds.map(id => safeFetch(`/api/products/${id}`))
+          )
+          // Extract unique categories from the cart products
           const categories = [...new Set(cartProducts.map(item => item.category))]
-          
-          // Fetch products from related categories
-          const promises = categories.map(category =>
-            fetch(`/api/products?category=${category}&limit=${Math.ceil(maxItems / categories.length)}`)
-              .then(res => res.json())
+          // Fetch products from each category
+          const categoryPromises = categories.map(category =>
+            safeFetch(`/api/products?category=${category}&limit=${Math.ceil(maxItems / categories.length)}`)
           )
-          
-          const results = await Promise.all(promises)
-          const products = results.map(result => result.products).flat()
-          
-          // Remove products that are already in cart
-          const filteredProducts = products.filter(
-            (p: Product) => !cartItemIds.includes(p.id)
-          )
-          
-          setRecommendedProducts(filteredProducts.slice(0, maxItems))
+          const results = await Promise.all(categoryPromises)
+          products = results.flatMap(result => result.products) as Product[]
+          // Exclude products already in the cart
+          products = products.filter(p => !cartItemIds.includes(p.id)).slice(0, maxItems)
+        } else {
+          // Fallback: fetch trending/popular products
+          const trendingData = await safeFetch(`/api/products?sort=rating&limit=${maxItems}`)
+          products = trendingData.products as Product[]
         }
-        // Otherwise fetch trending/popular products
-        else {
-          const trendingResponse = await fetch(`/api/products?sort=rating&limit=${maxItems}`)
-          const trendingData = await trendingResponse.json() as { products: Product[] }
-          const products = trendingData.products
-          setRecommendedProducts(products)
+
+        setRecommendedProducts(products)
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("Error fetching recommendations:", err)
+          setError("Failed to load recommendations")
         }
-      } catch (err) {
-        setError("Failed to load recommendations")
-        console.error("Error fetching recommendations:", err)
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchRecommendations()
+
+    // Cleanup: abort any ongoing fetch requests if the component unmounts
+    return () => controller.abort()
   }, [currentProductId, cartItemIds, maxItems])
 
   if (error) {
@@ -101,7 +102,7 @@ export default function RecommendedProducts({
       <div className="mt-8">
         <h2 className="text-xl font-bold mb-4">{title}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[...Array(maxItems)].map((_, i) => (
+          {Array.from({ length: maxItems }).map((_, i) => (
             <div key={i} className="animate-pulse">
               <div className="bg-gray-200 aspect-[4/5] rounded-lg mb-4" />
               <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
@@ -120,7 +121,7 @@ export default function RecommendedProducts({
   return (
     <div className="mt-8">
       <h2 className="text-xl font-bold mb-4">{title}</h2>
-      <ProductGrid 
+      <ProductGrid
         products={recommendedProducts}
         showPagination={false}
         className="bg-gray-50 p-6 rounded-xl"

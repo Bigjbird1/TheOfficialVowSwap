@@ -100,7 +100,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
 }, []);
   
   return (
-    <header className="border-b sticky top-0 bg-white z-[9000]">
+    <header className="border-b sticky top-0 bg-white z-50">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center lg:hidden">
@@ -172,25 +172,19 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
           </div>
         </div>
 
-        <nav className="hidden lg:flex items-center gap-8 text-base h-10 overflow-x-auto relative border-t">
+        <nav className="hidden lg:flex items-center gap-8 text-base py-3 overflow-x-auto relative border-t">
           {navigationData.map((category) => (
 <div
   key={category.name}
-  onMouseEnter={() => {
-    console.log(`Mouse entered category: ${category.name}`);
-    handleCategoryHover(category.name);
-  }}
-  onMouseLeave={() => {
-    console.log(`Mouse left category: ${category.name}`);
-    handleCategoryHover(null);
-  }}
-  className="relative group h-full flex flex-col"
+  onMouseEnter={() => handleCategoryHover(category.name)}
+  onMouseLeave={() => handleCategoryHover(null)}
+  className="relative group flex flex-col items-center"
 >
               <Link
                 href={category.name === "All Items" ? "/products" : `/products?categories=${category.name.toLowerCase()}`}
                 className={`text-gray-600 hover:text-gray-900 transition-colors duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full px-4 py-2 ${
                   hoveredCategory === category.name ? "bg-pink-500 text-white font-medium" : ""
-                } group-hover:text-gray-900 group-hover:font-medium`}
+                } group-hover:text-gray-900 group-hover:font-medium flex items-center`}
                 aria-expanded={hoveredCategory === category.name}
                 aria-haspopup={category.subcategories ? "true" : "false"}
                 role="menuitem"

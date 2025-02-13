@@ -14,14 +14,14 @@ export default function MegaMenu({ category, isOpen }: MegaMenuProps) {
 
   return (
 <div
-  className={`absolute left-1/2 transform -translate-x-1/2 top-full mt-1 bg-white shadow-lg rounded-lg ${
-    isOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-2 pointer-events-none"
-  } transition-all duration-200 ease-in-out z-[9999] max-w-4xl mx-auto w-screen`}
+  className={`absolute left-1/2 transform -translate-x-1/2 top-full mt-0.5 bg-white shadow-lg rounded-lg ${
+    isOpen ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-1 invisible"
+  } transition-all duration-150 ease-out z-50 max-w-4xl mx-auto w-screen border border-gray-100`}
   role="menu"
   aria-orientation="vertical"
   aria-labelledby={`${category.name}-menu-button`}
 >
-  <div className="w-full px-6 py-4 border-t border-gray-200">
+  <div className="w-full px-6 py-4">
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
       {category.subcategories.map((subcategory) => (
         <div key={subcategory.name} className="space-y-2">
