@@ -18,136 +18,136 @@ export const navigationData: Category[] = [
       {
         name: "Featured Collections",
         examples: ["New Arrivals", "Best Sellers", "Trending Items"],
-        href: "/products/featured"
+        href: "/products?filter=featured"
       },
       {
         name: "Shop by Style",
         examples: ["Modern", "Rustic", "Vintage", "Bohemian"],
-        href: "/products/styles"
+        href: "/products?filter=style"
       },
       {
         name: "Shop by Season",
         examples: ["Spring", "Summer", "Fall", "Winter"],
-        href: "/products/seasons"
+        href: "/products?filter=season"
       },
       {
         name: "Special Deals",
         examples: ["Clearance", "Bundle Deals", "Limited Time Offers"],
-        href: "/products/deals"
+        href: "/products?filter=deals"
       }
     ]
   },
   {
     name: "Decor",
-    href: "/products/decor",
+    href: "/products?categories=decor",
     subcategories: [
       {
         name: "Ceremony Decor",
         examples: ["backdrops", "altar decorations", "aisle runners"],
-        href: "/products/decor/ceremony"
+        href: "/products?categories=decor&subcategory=ceremony"
       },
       {
         name: "Reception Decor",
         examples: ["centerpieces", "table runners", "chair decorations"],
-        href: "/products/decor/reception"
+        href: "/products?categories=decor&subcategory=reception"
       },
       {
         name: "Ambient Decor",
         examples: ["draperies", "wall hangings", "thematic props"],
-        href: "/products/decor/ambient"
+        href: "/products?categories=decor&subcategory=ambient"
       },
       {
         name: "Outdoor Decor",
         examples: ["lighting", "archways", "floral installations"],
-        href: "/products/decor/outdoor"
+        href: "/products?categories=decor&subcategory=outdoor"
       }
     ]
   },
   {
     name: "Lighting",
-    href: "/products/lighting",
+    href: "/products?categories=lighting",
     subcategories: [
       {
         name: "Chandeliers & Pendant Lights",
-        href: "/products/lighting/chandeliers"
+        href: "/products?categories=lighting&subcategory=chandeliers"
       },
       {
         name: "String & Fairy Lights",
-        href: "/products/lighting/string-lights"
+        href: "/products?categories=lighting&subcategory=string-lights"
       },
       {
         name: "Accent & Uplighting",
-        href: "/products/lighting/accent"
+        href: "/products?categories=lighting&subcategory=accent"
       },
       {
         name: "Lanterns & Candles",
-        href: "/products/lighting/lanterns"
+        href: "/products?categories=lighting&subcategory=lanterns"
       }
     ]
   },
   {
     name: "Furniture",
-    href: "/products/furniture",
+    href: "/products?categories=furniture",
     subcategories: [
       {
         name: "Seating",
         examples: ["chairs", "benches", "sofas"],
-        href: "/products/furniture/seating"
+        href: "/products?categories=furniture&subcategory=seating"
       },
       {
         name: "Tables & Surfaces",
         examples: ["dining tables", "coffee tables"],
-        href: "/products/furniture/tables"
+        href: "/products?categories=furniture&subcategory=tables"
       },
       {
         name: "Lounge & Outdoor Furniture",
-        href: "/products/furniture/lounge"
+        href: "/products?categories=furniture&subcategory=lounge"
       }
     ]
   },
   {
     name: "Floral",
-    href: "/products/floral",
+    href: "/products?categories=floral",
     subcategories: [
       {
         name: "Bouquets",
-        href: "/products/floral/bouquets"
+        href: "/products?categories=floral&subcategory=bouquets"
       },
       {
         name: "Centerpieces & Arrangements",
-        href: "/products/floral/centerpieces"
+        href: "/products?categories=floral&subcategory=centerpieces"
       },
       {
         name: "Garlands & Installations",
-        href: "/products/floral/garlands"
+        href: "/products?categories=floral&subcategory=garlands"
       },
       {
         name: "Boutonnieres & Corsages",
-        href: "/products/floral/boutonnieres"
+        href: "/products?categories=floral&subcategory=boutonnieres"
       }
     ]
   },
   {
     name: "Accessories",
-    href: "/products/accessories",
+    href: "/products?categories=accessories",
     subcategories: [
       {
         name: "Invitations & Stationery",
-        href: "/products/accessories/stationery"
+        href: "/products?categories=accessories&subcategory=stationery"
       },
       {
         name: "Favors & Gifts",
-        href: "/products/accessories/favors"
+        href: "/products?categories=accessories&subcategory=favors"
       },
       {
         name: "Bridal Accessories",
         examples: ["jewelry", "veils"],
-        href: "/products/accessories/bridal"
+        href: "/products?categories=accessories&subcategory=bridal"
       },
       {
         name: "Reception Accessories",
         examples: ["signage", "decor props"],
-        href: "/products/accessories/reception"
+        href: "/products?categories=accessories&subcategory=reception"
       }
     ]
   },
