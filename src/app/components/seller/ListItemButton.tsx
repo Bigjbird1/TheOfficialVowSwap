@@ -68,8 +68,10 @@ export default function ListItemButton() {
 
                     if (!response.ok) throw new Error('Failed to create product');
                     
+                    const result = await response.json();
                     setShowForm(false);
-                    window.location.reload(); // Refresh to show new product
+                    // Instead of reloading the page, we could emit an event that other components can listen to
+                    window.dispatchEvent(new CustomEvent('productCreated', { detail: result }));
                   } catch (err) {
                     console.error('Create Product Error:', err);
                     alert('Failed to create product. Please try again.');

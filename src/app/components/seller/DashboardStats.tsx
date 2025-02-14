@@ -1,31 +1,56 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { SellerDashboardData } from '@/app/types/seller';
+import { SellerDashboardData, SellerStats } from '@/app/types/seller';
 import { AreaChart, BarChart, PieChart } from '@/app/components/charts';
 
 // Development-only dummy data
-const getDummyData = () => ({
-  revenue: {
-    total: 0,
-    monthly: 0,
-    weekly: 0,
-    daily: 0
+const getDummyData = (): SellerDashboardData => ({
+  seller: {
+    id: 'dummy-seller-id',
+    userId: 'dummy-user-id',
+    storeName: 'My Store',
+    contactEmail: 'store@example.com',
+    isVerified: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    description: '',
+    phoneNumber: '',
+    address: '',
+    bannerImage: '',
+    logoImage: '',
+    themeColor: '',
+    accentColor: '',
+    fontFamily: '',
+    layout: {},
+    socialLinks: {},
+    businessHours: {},
+    policies: {},
+    rating: 0,
+    totalSales: 0
   },
-  activeProducts: 0,
-  totalProducts: 0,
-  pendingOrders: 0,
-  totalOrders: 0,
-  topProducts: []
+  stats: {
+    totalProducts: 0,
+    activeProducts: 0,
+    totalOrders: 0,
+    pendingOrders: 0,
+    revenue: {
+      total: 0,
+      monthly: 0,
+      weekly: 0,
+      daily: 0
+    },
+    topProducts: []
+  },
+  recentOrders: []
 });
 
 export default function DashboardStats() {
-  const [data, setData] = useState<SellerDashboardData | null>(null);
+  const [data, setData] = useState<{ stats: SellerStats; recentOrders: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchDashboardData = async (retryCount = 0) => {
+  const fetchDashboardData = async (retryCount = 0) => {
       try {
         setLoading(true);
         const response = await fetch('/api/seller/dashboard', {
@@ -36,50 +61,43 @@ export default function DashboardStats() {
         });
         
         if (!response.ok || response.status === 204) {
-          const errorText = await response.text();
+          interface ErrorResponse {
+            error?: string;
+            message?: string;
+          }
+          
+          let errorData: ErrorResponse = {};
+          try {
+            errorData = await response.json() as ErrorResponse;
+          } catch (jsonError) {
+            errorData = { error: await response.text() };
+          }
           const statusCode = response.status;
           
-          // Handle empty response
-          if (response.status === 204) {
-            console.log('No content received from dashboard API');
-            return { stats: getDummyData(), recentOrders: [] };
-          }
-          
-          // Log detailed error information
-          console.error('Dashboard API Error:', {
+          // For any non-200 response, use dummy data
+          console.log('Using dummy data due to non-200 response:', {
             status: statusCode,
             statusText: response.statusText,
-            error: errorText,
+            error: errorData,
             timestamp: new Date().toISOString()
           });
-
-          // Handle specific error cases
-          if (statusCode === 401) {
-            throw new Error('Please sign in to access the dashboard');
-          } else if (statusCode === 403) {
-            throw new Error('You do not have permission to access the dashboard');
-          } else if (statusCode === 404) {
-            // Return empty state data instead of throwing error
-            return { stats: getDummyData(), recentOrders: [] };
-          }
-
-          // For 5xx errors, attempt retry
-          if (statusCode >= 500 && retryCount < 3) {
-            throw new Error('RETRY');
-          }
-
-          throw new Error(errorText || `Failed to fetch dashboard data (${statusCode})`);
+          return { stats: getDummyData().stats, recentOrders: [] };
         }
 
-        const dashboardData = await response.json();
-        
-        // Check if the response is empty or missing required data
-        if (!dashboardData || !dashboardData.stats) {
-          console.log('Empty dashboard data received:', dashboardData);
-          return { stats: getDummyData(), recentOrders: [] };
-        }
+        try {
+          const dashboardData = await response.json();
+          
+          // Check if the response is empty or missing required data
+          if (!dashboardData || !dashboardData.stats) {
+            console.log('Empty dashboard data received, using dummy data');
+            return { stats: getDummyData().stats, recentOrders: [] };
+          }
 
-        return dashboardData;
+          return dashboardData;
+        } catch (jsonError) {
+          console.log('Error parsing dashboard data, using dummy data:', jsonError);
+          return { stats: getDummyData().stats, recentOrders: [] };
+        }
       } catch (error) {
         if (error instanceof Error && error.message === 'RETRY' && retryCount < 3) {
           console.log(`Retrying dashboard fetch (attempt ${retryCount + 1}/3)...`);
@@ -100,12 +118,40 @@ export default function DashboardStats() {
       }
     };
 
-    fetchDashboardData().then(result => {
-      if (result) {
-        setData(result);
-        setError(null);
-      }
-    });
+  const fetchData = async () => {
+    const result = await fetchDashboardData();
+    if (result === null) {
+      // Handle null result from failed fetch
+      setData({ stats: getDummyData().stats, recentOrders: [] });
+      setError('Failed to fetch dashboard data. Using placeholder data.');
+      return;
+    }
+    
+    // Check if result is empty or invalid
+    if (!result.stats || Object.keys(result.stats).length === 0) {
+      setData({ stats: getDummyData().stats, recentOrders: [] });
+      setError('No dashboard data available. Using placeholder data.');
+      return;
+    }
+
+    setData(result);
+    setError(null);
+  };
+
+  useEffect(() => {
+    fetchData();
+
+    // Listen for product creation events
+    const handleProductCreated = () => {
+      console.log('Product created, refreshing dashboard data...');
+      fetchData();
+    };
+
+    window.addEventListener('productCreated', handleProductCreated);
+
+    return () => {
+      window.removeEventListener('productCreated', handleProductCreated);
+    };
   }, []);
 
   if (loading) {
