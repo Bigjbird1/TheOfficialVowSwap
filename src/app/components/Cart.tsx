@@ -1,7 +1,7 @@
 "use client"
 
 import { useCart } from "../contexts/CartContext"
-import { X, Plus, Minus } from "lucide-react"
+import { X, Plus, Minus, ShoppingBag, HeartCrack, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import { useState } from "react"
 import Checkout from "./Checkout"
@@ -34,11 +34,40 @@ export default function Cart({ isOpen, onClose }: CartProps) {
             </button>
           </div>
 
-          {items.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center">
-              <p className="text-gray-500">Your cart is empty</p>
-            </div>
-          ) : (
+{items.length === 0 ? (
+  <div className="flex flex-col items-center justify-center h-[calc(100vh-76px)] p-8 text-center">
+    <div className="relative mb-6">
+      <ShoppingBag className="w-20 h-20 text-gray-200" />
+      <HeartCrack className="w-8 h-8 text-rose-500 absolute -right-2 -bottom-2" />
+    </div>
+    
+    <h3 className="text-2xl font-semibold mb-2 bg-gradient-to-r from-rose-500 to-purple-600 bg-clip-text text-transparent">
+      Your Cart is Empty
+    </h3>
+    
+    <p className="text-gray-600 mb-8 max-w-xs">
+      Looks like your cart needs some wedding magic! Start adding beautiful decor items to create your perfect day.
+    </p>
+
+    <button 
+      onClick={onClose}
+      className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white rounded-full hover:bg-rose-600 transform hover:scale-105 transition duration-300"
+    >
+      Start Shopping <ArrowRight className="w-4 h-4" />
+    </button>
+    
+    <div className="mt-8 flex flex-wrap justify-center gap-2">
+      {["Decor", "Lighting", "Floral"].map((category) => (
+        <button
+          key={category}
+          className="px-4 py-1 bg-gray-50 text-gray-600 rounded-full hover:bg-rose-50 hover:text-rose-500 transition"
+        >
+          {category}
+        </button>
+      ))}
+    </div>
+  </div>
+) : (
             <>
               <div className="flex-1 overflow-y-auto p-4">
                 {items.map((item) => (
