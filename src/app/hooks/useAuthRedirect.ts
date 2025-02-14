@@ -1,4 +1,4 @@
-import { useSession } from "next-auth/react"
+import { useSession, signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
 export const useAuthRedirect = () => {
@@ -6,7 +6,11 @@ export const useAuthRedirect = () => {
   const router = useRouter()
 
   const handleStartSelling = () => {
-    router.push("/sign-up-sell")
+    if (session) {
+      router.push("/seller/create-listing")
+    } else {
+      router.push("/sign-up-sell")
+    }
   }
 
   return { handleStartSelling }

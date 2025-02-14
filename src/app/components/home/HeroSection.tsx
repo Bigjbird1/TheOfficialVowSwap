@@ -1,6 +1,9 @@
 "use client"
 
+import { useAuthRedirect } from "@/app/hooks/useAuthRedirect"
+
 export const HeroSection = () => {
+  const { handleStartSelling } = useAuthRedirect()
   return (
     <section className="w-full p-4">
       <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -35,12 +38,12 @@ export const HeroSection = () => {
             >
               Shop Now
             </a>
-            <a 
-              href="/seller/onboarding"
+            <button 
+              onClick={handleStartSelling}
               className="h-12 flex items-center justify-center bg-white text-[#E35B96] rounded-full hover:bg-gray-100 transition px-8"
             >
               Start Selling
-            </a>
+            </button>
           </div>
           </div>
         </div>

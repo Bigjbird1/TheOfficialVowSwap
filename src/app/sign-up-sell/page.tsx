@@ -45,7 +45,7 @@ export default function SignUpSellPage() {
 
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Create Your Seller Account</h2>
-          <SignUpForm redirectTo="/list-items" />
+          <SignUpForm redirectTo="/seller/onboarding" />
         </div>
       </div>
     </div>
