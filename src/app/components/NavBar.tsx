@@ -17,7 +17,7 @@ function AuthButtons() {
   if (session) {
     return (
       <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="flex items-center gap-2 hover:text-pink-500 transition">
+          <Link href="/dashboard" className="flex items-center gap-2 hover:text-[#E35B96] transition">
           <User className="w-5 h-5" />
           <span className="text-sm">{session.user?.name}</span>
         </Link>
@@ -29,7 +29,7 @@ function AuthButtons() {
         </button>
         <Link 
           href="/seller/dashboard" 
-          className="px-6 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
+          className="px-6 py-2 bg-[#E35B96] text-white rounded-full hover:bg-[#d14a85] transition focus:outline-none focus:ring-2 focus:ring-[#E35B96] focus:ring-offset-2"
         >
           Start Selling
         </Link>
@@ -45,7 +45,7 @@ function AuthButtons() {
         </button>
       </Link>
       <Link href="/auth/signup">
-        <button className="px-6 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition">
+        <button className="px-6 py-2 bg-[#E35B96] text-white rounded-full hover:bg-[#d14a85] transition">
           Sign Up
         </button>
       </Link>
@@ -101,19 +101,19 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
   
   return (
     <header className="border-b sticky top-0 bg-white z-50">
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center lg:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-pink-500"
+              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#E35B96]"
               aria-label="Open menu"
             >
               <Menu className="h-6 w-6" />
             </button>
           </div>
           <Link href="/">
-            <div className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent cursor-pointer">
+            <div className="text-2xl font-bold bg-gradient-to-r from-[#E35B96] to-[#8B5CF6] bg-clip-text text-transparent cursor-pointer">
               VowSwap
             </div>
           </Link>
@@ -125,7 +125,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
                   type="search"
                   placeholder="Search wedding decor items..."
                   aria-label="Search wedding decor items"
-                  className="w-full pl-12 pr-24 py-2 border rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
+                  className="w-full pl-12 pr-24 h-12 border rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E35B96] transition"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   list="search-suggestions"
@@ -140,7 +140,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <button 
                   type="submit" 
-                  className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full hover:from-pink-600 hover:to-purple-700 transition"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-[#E35B96] text-white rounded-full hover:bg-[#d14a85] transition"
                 >
                   Search
                 </button>
@@ -151,18 +151,18 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
           <div className="flex items-center gap-6">
             <button 
               aria-label="Favorites" 
-              className="text-gray-600 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full p-1"
+              className="text-gray-600 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-[#E35B96] focus:ring-offset-2 rounded-full p-1"
             >
               <Heart className="w-5 h-5" />
             </button>
             <button 
               aria-label="Shopping Bag" 
-              className="text-gray-600 hover:text-gray-900 transition relative focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full p-1"
+              className="text-gray-600 hover:text-gray-900 transition relative focus:outline-none focus:ring-2 focus:ring-[#E35B96] focus:ring-offset-2 rounded-full p-1"
               onClick={() => setIsCartOpen(true)}
             >
               <ShoppingBag className="w-5 h-5" />
               {items.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-[#E35B96] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {items.length}
                 </span>
               )}
@@ -182,8 +182,8 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
 >
               <Link
                 href={category.href}
-                className={`text-gray-600 hover:text-gray-900 transition-colors duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-full px-4 py-2 ${
-                  hoveredCategory === category.name ? "bg-pink-500 text-white font-medium" : ""
+                className={`text-gray-600 hover:text-gray-900 transition-colors duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#E35B96] focus:ring-offset-2 rounded-full px-4 py-2 ${
+                  hoveredCategory === category.name ? "bg-[#E35B96] text-white font-medium" : ""
                 } group-hover:text-gray-900 group-hover:font-medium flex items-center`}
                 aria-expanded={hoveredCategory === category.name}
                 aria-haspopup={category.subcategories ? "true" : "false"}

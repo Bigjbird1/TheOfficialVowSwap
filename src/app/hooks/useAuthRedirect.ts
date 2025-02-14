@@ -6,11 +6,7 @@ export const useAuthRedirect = () => {
   const router = useRouter()
 
   const handleStartSelling = () => {
-    if (session?.user) {
-      router.push("/list-items")
-    } else {
-      router.push("/sign-up-sell")
-    }
+    router.push("/sign-up-sell")
   }
 
   return { handleStartSelling }

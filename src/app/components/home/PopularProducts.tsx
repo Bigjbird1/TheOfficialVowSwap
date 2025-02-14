@@ -3,281 +3,126 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
-import { useCart } from '../../contexts/CartContext'
-import { useWishlist } from '../../contexts/WishlistContext'
 
 interface Product {
   id: string
   name: string
   price: number
   image: string
-  viewerCount: number
-  stockCount: number
-  isFavorited?: boolean
+  category: string
 }
 
-// Mock data - in production, this would come from an API
 const mockProducts: Product[] = [
   {
     id: '1',
-    name: 'Crystal Centerpiece',
-    price: 129.99,
-    image: '/placeholder.svg?height=300&width=300',
-    viewerCount: 15,
-    stockCount: 3
+    name: 'Vintage Vases',
+    price: 129,
+    image: '/placeholder.svg',
+    category: 'Decor'
   },
   {
     id: '2',
-    name: 'Floral Arch',
-    price: 299.99,
-    image: '/placeholder.svg?height=300&width=300',
-    viewerCount: 24,
-    stockCount: 5
+    name: 'Crystal Chandeliers',
+    price: 299,
+    image: '/placeholder.svg',
+    category: 'Lighting'
   },
   {
     id: '3',
-    name: 'Table Runner Set',
-    price: 79.99,
-    image: '/placeholder.svg?height=300&width=300',
-    viewerCount: 18,
-    stockCount: 8
+    name: 'Table Runners',
+    price: 49,
+    image: '/placeholder.svg',
+    category: 'Decor'
   },
   {
     id: '4',
-    name: 'LED String Lights',
-    price: 49.99,
-    image: '/placeholder.svg?height=300&width=300',
-    viewerCount: 32,
-    stockCount: 2
+    name: 'Floral Arrangements',
+    price: 199,
+    image: '/placeholder.svg',
+    category: 'Decor'
+  },
+  {
+    id: '5',
+    name: 'LED Curtains',
+    price: 149,
+    image: '/placeholder.svg',
+    category: 'Lighting'
+  },
+  {
+    id: '6',
+    name: 'Rustic Signs',
+    price: 79,
+    image: '/placeholder.svg',
+    category: 'Decor'
   }
 ]
 
 export const PopularProducts = () => {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const { addItem } = useCart()
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
+  const [selectedCategory, setSelectedCategory] = useState<string>('All')
 
-  const handleAddToCart = (product: Product) => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image
-    })
-  }
-
-const [isWishlistLoading, setIsWishlistLoading] = useState<string | null>(null)
-const { data: session } = useSession()
-
-const toggleFavorite = async (productId: string) => {
-  if (!session) {
-    // Redirect to login if not authenticated
-    window.location.href = '/auth/signin?callbackUrl=' + encodeURIComponent(window.location.href)
-    return
-  }
-
-  setIsWishlistLoading(productId)
-  try {
-    if (isInWishlist(productId)) {
-      await removeFromWishlist(productId)
-    } else {
-      await addToWishlist(productId)
-    }
-  } catch (error) {
-    console.error('Error toggling favorite:', error)
-  } finally {
-    setIsWishlistLoading(null)
-  }
-}
+  const filteredProducts = selectedCategory === 'All' 
+    ? mockProducts
+    : mockProducts.filter(product => product.category === selectedCategory)
 
   return (
-    <section className="pt-6 pb-8 bg-white">
+    <section className="py-12 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Popular Right Now</h2>
-          <select 
-            className="border-2 border-gray-200 rounded-lg px-4 py-2 bg-white focus:outline-none focus:border-rose-500"
-            aria-label="Sort products"
-          >
-            <option value="featured">Featured</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="newest">Newest</option>
-          </select>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Popular Items</h2>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setSelectedCategory('All')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
+                ${selectedCategory === 'All' 
+                  ? 'bg-[#E35B96] text-white' 
+                  : 'text-gray-600 hover:text-gray-900'}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setSelectedCategory('Decor')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
+                ${selectedCategory === 'Decor' 
+                  ? 'bg-[#E35B96] text-white' 
+                  : 'text-gray-600 hover:text-gray-900'}`}
+            >
+              Decor
+            </button>
+            <button
+              onClick={() => setSelectedCategory('Lighting')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
+                ${selectedCategory === 'Lighting' 
+                  ? 'bg-[#E35B96] text-white' 
+                  : 'text-gray-600 hover:text-gray-900'}`}
+            >
+              Lighting
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {mockProducts.map((product) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filteredProducts.map((product) => (
             <Link 
               key={product.id}
               href={`/product/${product.id}`}
-              className="block relative bg-white rounded-lg shadow-md overflow-hidden group"
+              className="block bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition"
             >
-              {/* Product Image */}
-              <div className="relative aspect-square">
+              <div className="relative w-full" style={{ paddingBottom: '75%' }}> {/* 4:3 aspect ratio */}
                 <Image
                   src={product.image}
                   alt={product.name}
                   fill
                   className="object-cover"
-                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
                 />
-                
-                {/* Quick View Button Overlay */}
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      setSelectedProduct(product)
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 bg-white text-gray-900 px-6 py-2 rounded-full hover:bg-gray-100"
-                  >
-                    Quick View
-                  </button>
-                </div>
               </div>
-
-              {/* Product Info */}
               <div className="p-4">
-                <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
-                <p className="text-xl font-bold text-gray-900 mt-2">${product.price}</p>
-                
-                {/* Real-time Indicators */}
-                <div className="mt-2 space-y-2 text-sm">
-                  <p className="text-gray-600 flex items-center">
-                    <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    {product.viewerCount} people viewing
-                  </p>
-                  {product.stockCount <= 5 && (
-                    <p className="text-rose-600 font-medium">
-                      Only {product.stockCount} left!
-                    </p>
-                  )}
-                </div>
-
-                {/* Favorite Button */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault()
-                    toggleFavorite(product.id)
-                  }}
-                  className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white shadow-md hover:bg-gray-100 transition-colors"
-                  aria-label={isInWishlist(product.id) ? "Remove from favorites" : "Add to favorites"}
-                  disabled={isWishlistLoading === product.id}
-                >
-                  {isWishlistLoading === product.id ? (
-                    <svg className="animate-spin h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    <svg 
-                      className={`w-6 h-6 ${isInWishlist(product.id) ? 'text-rose-500 fill-current' : 'text-gray-400 stroke-current'}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2} 
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                      />
-                    </svg>
-                  )}
-                </button>
+                <h3 className="text-sm font-medium text-gray-900">{product.name}</h3>
+                <p className="mt-1 text-sm text-gray-900">${product.price}</p>
               </div>
             </Link>
           ))}
         </div>
-
-        {/* Quick View Modal */}
-        {selectedProduct && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-2xl font-bold text-gray-900">{selectedProduct.name}</h3>
-                  <button
-                    onClick={() => setSelectedProduct(null)}
-                    className="text-gray-400 hover:text-gray-500"
-                    aria-label="Close modal"
-                  >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="relative aspect-square">
-                    <Image
-                      src={selectedProduct.image}
-                      alt={selectedProduct.name}
-                      fill
-                      className="object-cover rounded-lg"
-                    />
-                  </div>
-                  
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900 mb-4">
-                      ${selectedProduct.price}
-                    </p>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                        {selectedProduct.viewerCount} people viewing this right now
-                      </div>
-                      
-                      {selectedProduct.stockCount <= 5 && (
-                        <p className="text-rose-600 font-medium">
-                          Only {selectedProduct.stockCount} left in stock - order soon!
-                        </p>
-                      )}
-                      
-                      <button 
-                        onClick={() => handleAddToCart(selectedProduct)}
-                        className="w-full bg-rose-500 text-white px-6 py-3 rounded-full hover:bg-rose-600 transition-colors"
-                      >
-                        Add to Cart
-                      </button>
-                      
-                      <button 
-                        onClick={() => toggleFavorite(selectedProduct.id)}
-                        className="w-full border-2 border-gray-200 px-6 py-3 rounded-full hover:border-gray-300 transition-colors flex items-center justify-center gap-2"
-                        disabled={isWishlistLoading === selectedProduct.id}
-                      >
-                        {isWishlistLoading === selectedProduct.id ? (
-                          <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                        ) : (
-                          <svg 
-                            className={`w-5 h-5 ${isInWishlist(selectedProduct.id) ? 'text-rose-500 fill-current' : 'text-gray-400 stroke-current'}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                              strokeWidth={2} 
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                            />
-                          </svg>
-                        )}
-                        {isInWishlist(selectedProduct.id) ? 'Saved to Favorites' : 'Save to Favorites'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </section>
   )
