@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Search, Heart, ShoppingBag, User, Menu } from "lucide-react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -77,30 +77,40 @@ export default function NavBar() {
   }, [debouncedSearch])
 
   // Handle category hover
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-const handleCategoryHover = useCallback((categoryName: string | null) => {
-  console.log(`Hovering over category: ${categoryName}`);
-  if (hoverTimeout) {
-    clearTimeout(hoverTimeout);
-    setHoverTimeout(null);
-  }
+  const handleCategoryHover = useCallback((categoryName: string | null) => {
+    console.log(`Hovering over category: ${categoryName}`);
+    
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
 
-  if (categoryName) {
-    console.log(`Setting hoveredCategory to: ${categoryName}`);
-    setHoveredCategory(categoryName);
-  } else {
-    const timeout = setTimeout(() => {
-      console.log(`Clearing hoveredCategory`);
-      setHoveredCategory(null);
-    }, 200); // Slight delay before closing
+    if (categoryName) {
+      console.log(`Setting hoveredCategory to: ${categoryName}`);
+      setHoveredCategory(categoryName);
+    } else {
+      // Set timeout to close menu after delay
+      hoverTimeoutRef.current = setTimeout(() => {
+        console.log(`Clearing hoveredCategory`);
+        setHoveredCategory(null);
+      }, 300); // 300ms delay for better UX
+    }
+  }, []);
 
-    setHoverTimeout(timeout as unknown as NodeJS.Timeout);
-  }
-}, []);
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
   
   return (
-    <header className="border-b sticky top-0 bg-white z-50">
+    <header className="border-b sticky top-0 bg-white z-[9998]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center lg:hidden">
@@ -178,7 +188,7 @@ const handleCategoryHover = useCallback((categoryName: string | null) => {
   key={category.name}
   onMouseEnter={() => handleCategoryHover(category.name)}
   onMouseLeave={() => handleCategoryHover(null)}
-  className="relative group flex flex-col items-center"
+  className="relative group flex flex-col items-center z-[9999]"
 >
               <Link
                 href={category.href}

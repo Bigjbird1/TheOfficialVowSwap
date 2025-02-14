@@ -12,6 +12,10 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      backgroundImage: {
+        'geometric-pattern': "url('/geometric-pattern.svg')",
+        'geometric-pattern-light': "url('/geometric-pattern-light.svg')"
+      },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0', transform: 'translateY(10px)' },

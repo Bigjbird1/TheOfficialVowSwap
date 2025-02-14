@@ -27,8 +27,10 @@
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --geometric-pattern: url('/geometric-pattern.svg');
+  --geometric-pattern-light: url('/geometric-pattern-light.svg');
 }
 
 html {

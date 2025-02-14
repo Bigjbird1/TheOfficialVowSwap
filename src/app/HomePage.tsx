@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 
 export default function MarketplaceHome() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-geometric-pattern bg-cover bg-center bg-fixed bg-no-repeat">
       <main id="main-content" className="flex-grow">
         <HeroSection />
         <PopularProducts />

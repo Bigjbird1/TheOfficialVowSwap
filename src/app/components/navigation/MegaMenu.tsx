@@ -15,8 +15,8 @@ export default function MegaMenu({ category, isOpen }: MegaMenuProps) {
   return (
 <div
   className={`absolute left-1/2 transform -translate-x-1/2 top-full mt-0.5 bg-white shadow-lg rounded-lg ${
-    isOpen ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-1 invisible"
-  } transition-all duration-150 ease-out z-50 max-w-4xl mx-auto w-screen border border-gray-100`}
+    isOpen ? "opacity-100 translate-y-0 visible pointer-events-auto" : "opacity-0 -translate-y-1 invisible pointer-events-none"
+  } transition-all duration-150 ease-out will-change-transform z-[9999] max-w-4xl mx-auto w-screen border border-gray-100`}
   role="menu"
   aria-orientation="vertical"
   aria-labelledby={`${category.name}-menu-button`}
