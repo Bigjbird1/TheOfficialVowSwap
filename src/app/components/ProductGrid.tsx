@@ -249,27 +249,46 @@ export default function ProductGrid({
             role="gridcell"
             style={{ contain: 'layout style paint' }}
           >
-            <Link 
-              href={`/product/${product.id}`}
-              className="block focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-lg"
-            >
-              <div 
-                className="aspect-[4/5] relative rounded-lg overflow-hidden mb-4 bg-gray-50"
-                style={{ willChange: 'transform' }}
+            <div className="relative">
+              <Link 
+                href={`/product/${product.id}`}
+                className="block focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 rounded-lg"
               >
-                <Image
-                  src={product.images[0]?.url || "/placeholder.svg"}
-                  alt={product.images[0]?.alt || `Product image of ${product.name}`}
-                  fill
-                  loading="lazy"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500 will-change-transform"
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  style={{ 
-                    transform: 'translateZ(0)',
-                    backfaceVisibility: 'hidden'
-                  }}
-                />
+                <div 
+                  className="aspect-[4/5] relative rounded-lg overflow-hidden mb-4 bg-gray-50"
+                  style={{ willChange: 'transform' }}
+                >
+                  <Image
+                    src={product.images[0]?.url || "/placeholder.svg"}
+                    alt={product.images[0]?.alt || `Product image of ${product.name}`}
+                    fill
+                    loading="lazy"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500 will-change-transform"
+                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    style={{ 
+                      transform: 'translateZ(0)',
+                      backfaceVisibility: 'hidden'
+                    }}
+                  />
+                </div>
+              </Link>
+              
+              {/* Quick View Overlay */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-50 pointer-events-auto">
+                <div className="bg-white rounded-lg p-4 w-11/12 max-w-sm space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Quick View
+                  </h3>
+                  <AddToCartButton product={product} className="w-full" />
+                  <Link
+                    href={`/product/${product.id}`}
+                    className="block w-full text-center bg-white border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
+                  >
+                    View Details
+                  </Link>
+                </div>
               </div>
+            </div>
               <h3 className="font-medium text-lg mb-2 line-clamp-2 text-gray-800 group-hover:text-pink-600 transition-colors duration-200">
                 {product.name}
               </h3>
@@ -313,8 +332,7 @@ export default function ProductGrid({
                   </span>
                 </div>
               </div>
-            </Link>
-            <AddToCartButton product={product} />
+              <AddToCartButton product={product} />
           </div>
         ))}
       </div>
@@ -350,7 +368,7 @@ export default function ProductGrid({
   )
 }
 
-function AddToCartButton({ product }: { product: Product }) {
+function AddToCartButton({ product, className }: { product: Product; className?: string }) {
   const { addItem } = useCart()
 
   const handleAddToCart = (e: React.MouseEvent) => {

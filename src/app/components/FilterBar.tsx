@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown, X, SlidersHorizontal } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, ChevronDown, X, SlidersHorizontal, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DropdownMenu,
@@ -7,6 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from './ui/dropdown-menu';
+import { Range } from 'react-range';
 
 export interface FilterOption {
   id: string;
@@ -34,15 +35,8 @@ const FILTER_CATEGORIES: FilterCategory[] = [
       { id: 'lighting', label: 'Lighting' },
       { id: 'furniture', label: 'Furniture' },
       { id: 'tableware', label: 'Tableware' },
-    ],
-  },
-  {
-    name: 'Price',
-    options: [
-      { id: 'under-50', label: 'Under $50' },
-      { id: '50-100', label: '$50 - $100' },
-      { id: '100-200', label: '$100 - $200' },
-      { id: 'over-200', label: '$200+' },
+      { id: 'apparel', label: 'Apparel' },
+      { id: 'jewelry', label: 'Jewelry' },
     ],
   },
   {
@@ -125,11 +119,11 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
               <input
                 type="text"
                 placeholder="Search products..."
-                className="w-full h-10 pl-10 pr-4 rounded-full bg-gradient-to-r from-violet-50 to-fuchsia-50 border-0 
-                         focus:ring-2 focus:ring-violet-500 focus:bg-white shadow-sm hover:shadow-md 
-                         transition-all duration-200"
+                className="w-full h-10 pl-10 pr-4 rounded-full bg-gradient-to-r from-rose-50 to-pink-50 border-0 
+                         focus:ring-2 focus:ring-rose-500 focus:bg-white shadow-sm hover:shadow-md 
+                         transition-all duration-200 placeholder:text-rose-400/50"
               />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-rose-400/70" />
             </div>
 
             {/* Mobile Filter Toggle */}
@@ -147,21 +141,24 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
           <div className="hidden md:flex items-center gap-4 pb-4">
             {FILTER_CATEGORIES.map(category => (
               <DropdownMenu key={category.name}>
-                <DropdownMenuTrigger className="min-w-[140px] px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-rose-200 hover:bg-rose-50/50 focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all duration-200">
+                <DropdownMenuTrigger className={`min-w-[140px] px-4 py-2.5 bg-white border border-rose-100 rounded-full text-sm font-medium text-rose-900 hover:bg-rose-50/50 focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all duration-200 ${
+              activeFilters[category.name] ? 'bg-rose-100' : ''
+            }`}>
                   <div className="flex items-center justify-between gap-2">
                     <span>{activeFilters[category.name] 
                       ? FILTER_CATEGORIES.find(c => c.name === category.name)?.options.find(o => o.id === activeFilters[category.name])?.label 
                       : category.name}
                     </span>
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                    <ChevronDown className="w-4 h-4 text-rose-500/80" />
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
+                <DropdownMenuContent align="start" className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg">
                   {category.options.map(option => (
                     <DropdownMenuItem
                       key={option.id}
                       selected={activeFilters[category.name] === option.id}
                       onClick={() => handleFilterClick(category.name, option.id)}
+                      className="data-[selected]:bg-rose-50 data-[selected]:text-rose-900 hover:bg-rose-50/50 transition-colors duration-200"
                     >
                       {option.label}
                     </DropdownMenuItem>
@@ -173,8 +170,9 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
             {Object.keys(activeFilters).length > 0 && (
               <button
                 onClick={clearAllFilters}
-                className="px-4 py-2.5 text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50/50 rounded-lg transition-colors duration-200"
+                className="px-4 py-2.5 text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50/50 rounded-full transition-colors duration-200 flex items-center gap-1"
               >
+                <X className="w-4 h-4" />
                 Clear all
               </button>
             )}
@@ -195,20 +193,20 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {FILTER_CATEGORIES.map(category => (
                   <div key={category.name}>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">{category.name}</h4>
+                    <h4 className="text-sm font-medium text-rose-900 mb-3">{category.name}</h4>
                     <div className="flex flex-wrap gap-2">
                       {category.options.map(option => (
                         <button
                           key={option.id}
                           onClick={() => handleFilterClick(category.name, option.id)}
-                          className={`inline-flex items-center px-4 py-2 rounded-full text-sm
+                          className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
                                     transition-all duration-200 ${
                             activeFilters[category.name] === option.id
-                              ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white'
-                              : 'bg-gradient-to-r from-violet-50 to-fuchsia-50 text-gray-700'
+                              ? 'bg-rose-100 text-rose-900 shadow-sm'
+                              : 'bg-white border border-rose-100 text-rose-900 hover:bg-rose-50/50'
                           }`}
                         >
                           {option.label}
@@ -217,6 +215,34 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
                     </div>
                   </div>
                 ))}
+                
+                {/* Price Range Slider */}
+                <div>
+                  <h4 className="text-sm font-medium text-rose-900 mb-3">Price Range</h4>
+                  <div className="px-4">
+                    <Range
+                      step={10}
+                      min={0}
+                      max={1000}
+                      values={[0, 1000]}
+                      onChange={(values) => console.log(values)}
+                      renderTrack={({ props, children }) => (
+                        <div
+                          {...props}
+                          className="h-1.5 w-full bg-rose-100 rounded-full transition-all duration-200"
+                        >
+                          {children}
+                        </div>
+                      )}
+                      renderThumb={({ props }) => (
+                        <div
+                          {...props}
+                          className="h-5 w-5 bg-white rounded-full shadow-lg border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-transform duration-200 hover:scale-105"
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
@@ -243,7 +269,7 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
                     <motion.button
                       key={`${category}-${optionId}`}
                       onClick={() => handleFilterClick(category, optionId)}
-                      className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-violet-100 text-violet-700 hover:bg-violet-200 transition-colors duration-200"
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors duration-200"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >

@@ -37,6 +37,7 @@
     "react-focus-lock": "^2.13.6",
     "react-hot-toast": "^2.5.1",
     "react-input-mask": "^2.0.4",
+    "react-range": "^1.10.0",
     "recharts": "^2.15.1",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
