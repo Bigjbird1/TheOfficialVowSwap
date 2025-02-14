@@ -49,7 +49,7 @@ export function RegistryProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
 
   useEffect(() => {
-    if (session?.user) {
+    if (session?.user?.role === 'CUSTOMER') {
       fetchRegistry();
     } else {
       setRegistry(null);

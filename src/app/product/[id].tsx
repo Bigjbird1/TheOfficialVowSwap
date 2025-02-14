@@ -1,4 +1,5 @@
 import ProductDetailsPage from "../ProductDetailsPage"
+import ProductClientLayout from "./client-layout"
 
 interface Props {
   params: {
@@ -26,7 +27,11 @@ async function getProduct(id: string) {
 export default async function ProductPage({ params }: Props) {
   try {
     const product = await getProduct(params.id)
-    return <ProductDetailsPage id={params.id} product={product} />
+    return (
+      <ProductClientLayout>
+        <ProductDetailsPage id={params.id} product={product} />
+      </ProductClientLayout>
+    )
   } catch (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">

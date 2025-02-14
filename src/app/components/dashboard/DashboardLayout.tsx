@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useCart } from "@/app/contexts/CartContext";
+import { useWishlist } from "@/app/contexts/WishlistContext";
 import OrderHistory from "./OrderHistory";
 import SavedAddresses from "./SavedAddresses";
 import PaymentMethods from "./PaymentMethods";
@@ -41,17 +43,15 @@ export default function DashboardLayout() {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
-        const [ordersRes, addressesRes, paymentMethodsRes, wishlistRes] = await Promise.all([
+        const [ordersRes, addressesRes, paymentMethodsRes] = await Promise.all([
           fetch("/api/orders").then(res => res.json()),
           fetch("/api/addresses").then(res => res.json()),
           fetch("/api/payment-methods").then(res => res.json()),
-          fetch("/api/wishlist").then(res => res.json()),
         ]);
 
         setOrders(ordersRes);
         setAddresses(addressesRes);
         setPaymentMethods(paymentMethodsRes);
-        setWishlistItems(wishlistRes);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -135,32 +135,27 @@ export default function DashboardLayout() {
     }
   }, []);
 
-  // Wishlist state and handlers
-  const [wishlistItems, setWishlistItems] = useState<(Product & { addedAt: Date })[]>([]);
-
-  const handleRemoveFromWishlist = useCallback(async (productId: string) => {
-    try {
-      const response = await fetch(`/api/wishlist/${productId}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Failed to remove from wishlist");
-      setWishlistItems(prev => prev.filter(item => item.id !== productId));
-    } catch (error) {
-      console.error("Error removing from wishlist:", error);
-    }
-  }, []);
+  // Cart and Wishlist contexts
+  const { addItem } = useCart();
+  const { items: wishlistItems, removeFromWishlist, isLoading: wishlistLoading } = useWishlist();
 
   const handleMoveToCart = useCallback(async (productId: string) => {
     try {
-      const response = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, quantity: 1 }),
+      const item = wishlistItems.find(item => item.productId === productId);
+      if (!item) return;
+
+      addItem({
+        id: item.productId,
+        name: item.product.name,
+        price: item.product.price,
+        image: item.product.images[0]
       });
-      if (!response.ok) throw new Error("Failed to add to cart");
-      await handleRemoveFromWishlist(productId);
+      
+      await removeFromWishlist(productId);
     } catch (error) {
       console.error("Error moving to cart:", error);
     }
-  }, [handleRemoveFromWishlist]);
+  }, [wishlistItems, addItem, removeFromWishlist]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -218,15 +213,26 @@ export default function DashboardLayout() {
           )}
           {activeTab === "wishlist" && (
             <WishlistItems 
-              items={wishlistItems}
-              onRemoveFromWishlist={handleRemoveFromWishlist}
+              items={wishlistItems.map(item => ({
+                ...item.product,
+                id: item.productId,
+                addedAt: item.addedAt,
+                sellerId: item.product.sellerId || '',
+                categoryId: item.product.categoryId || '',
+                quantity: item.product.quantity || 0,
+                isActive: item.product.isActive || false,
+                rating: item.product.rating || 0,
+                totalSales: item.product.totalSales || 0,
+                tags: item.product.tags || []
+              }))}
+              onRemoveFromWishlist={removeFromWishlist}
               onMoveToCart={handleMoveToCart}
-              isLoading={isLoading}
+              isLoading={wishlistLoading}
             />
           )}
           {activeTab === "registry" && (
             <RegistryDetails 
-              items={[]}
+              registryItems={[]}
               onUpdateQuantity={(productId: string, quantity: number) => Promise.resolve()}
               onRemoveItem={(productId: string) => Promise.resolve()}
               isLoading={isLoading}

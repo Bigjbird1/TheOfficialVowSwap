@@ -12,21 +12,74 @@ export default function RecentOrders() {
   const [data, setData] = useState<SellerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [error, setError] = useState<{
+    message: string;
+    code?: number;
+    details?: string;
+    retryCount?: number;
+  } | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     status: 'ALL',
     dateRange: '7D',
   });
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (retryCount = 0) => {
     try {
+      setLoading(true);
+      setRetrying(retryCount > 0);
+      setError(null);
+
       const response = await fetch('/api/seller/dashboard');
-      if (!response.ok) throw new Error('Failed to fetch dashboard data');
-      const dashboardData = await response.json();
-      setData(dashboardData);
+      const errorData = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        // Handle specific HTTP status codes
+        switch (response.status) {
+          case 401:
+            console.error('Authentication error:', errorData);
+            window.location.href = '/auth/signin';
+            return;
+          case 404:
+            console.error('Seller account not found:', errorData);
+            window.location.href = '/seller/onboarding';
+            return;
+          case 503:
+            throw new Error('Database connection error. Please try again.');
+          default:
+            throw new Error(
+              errorData?.details || 
+              `Server error (${response.status}). Please try again.`
+            );
+        }
+      }
+
+      setData(errorData);
+      setError(null);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Dashboard data fetch error:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        retryCount,
+        timestamp: new Date().toISOString()
+      });
+
+      // Set detailed error state
+      setError({
+        message: 'Failed to load dashboard data',
+        details: error instanceof Error ? error.message : 'Unknown error occurred',
+        retryCount,
+      });
+
+      // Implement exponential backoff for retries
+      if (retryCount < 3) {
+        const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+        setTimeout(() => {
+          fetchDashboardData(retryCount + 1);
+        }, backoffDelay);
+      }
     } finally {
       setLoading(false);
+      setRetrying(false);
     }
   };
 
@@ -41,12 +94,49 @@ export default function RecentOrders() {
         body: JSON.stringify(updateData),
       });
 
-      if (!response.ok) throw new Error('Failed to update order status');
+      const errorData = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        console.error('Order status update error:', {
+          orderId,
+          status: response.status,
+          error: errorData,
+          timestamp: new Date().toISOString()
+        });
+
+        // Handle specific error cases
+        switch (response.status) {
+          case 401:
+            window.location.href = '/auth/signin';
+            return;
+          case 404:
+            throw new Error('Order not found');
+          case 403:
+            throw new Error('Not authorized to update this order');
+          default:
+            throw new Error(
+              errorData?.details || 
+              `Failed to update order status (${response.status})`
+            );
+        }
+      }
       
       // Refresh the orders list
       await fetchDashboardData();
     } catch (error) {
-      console.error('Error updating order status:', error);
+      console.error('Order status update error:', {
+        orderId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+
+      setError({
+        message: 'Failed to update order status',
+        details: error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
+
+      // Clear error after 5 seconds
+      setTimeout(() => setError(null), 5000);
     } finally {
       setUpdating(null);
     }
@@ -138,7 +228,42 @@ export default function RecentOrders() {
   if (!data) {
     return (
       <div className="rounded-xl bg-gray-50 p-6 text-center shadow-lg shadow-gray-200/50 border border-gray-100">
-        <p className="text-gray-500">Failed to load orders</p>
+        <div className="space-y-3">
+          <p className="text-gray-800 font-medium">
+            {error?.message || 'Failed to load orders'}
+          </p>
+          {error?.details && (
+            <p className="text-gray-500 text-sm">
+              {error.details}
+            </p>
+          )}
+          {error && (
+            <div className="space-y-2">
+              <button 
+                onClick={() => fetchDashboardData(0)}
+                disabled={retrying}
+                className="mt-4 px-4 py-2 text-sm font-medium text-white bg-rose-500 rounded-lg hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {retrying ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Retrying...
+                  </span>
+                ) : (
+                  'Try Again'
+                )}
+              </button>
+              {error.retryCount && error.retryCount > 0 && (
+                <p className="text-gray-500 text-xs">
+                  Retry attempt {error.retryCount} of 3
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   }

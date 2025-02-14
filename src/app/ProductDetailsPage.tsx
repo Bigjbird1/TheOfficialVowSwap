@@ -4,6 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import { Heart, Share2, ShoppingBag, Star, Truck, Shield, ArrowLeft, ArrowRight, Check } from "lucide-react"
 import { useCart } from "./contexts/CartContext"
+import { useWishlist } from "./contexts/WishlistContext"
 import { AddToRegistry } from "./components/registry/AddToRegistry"
 import RecommendedProducts from "./components/RecommendedProducts"
 import ItemDetails from "./components/ItemDetails"
@@ -38,6 +39,7 @@ const ProductDetailsPage = ({ id, product }: ProductDetailsPageProps) => {
   const [quantity, setQuantity] = useState(1)
   const [showAddedNotification, setShowAddedNotification] = useState(false)
   const { addItem } = useCart()
+  const { addToWishlist, removeFromWishlist, isInWishlist, error } = useWishlist()
 
   const handleAddToCart = () => {
     addItem({
@@ -134,10 +136,26 @@ const ProductDetailsPage = ({ id, product }: ProductDetailsPageProps) => {
             <div className="text-3xl font-bold">${product.price}</div>
             <div className="flex items-center gap-4">
               <button
-                aria-label="Add to favorites"
-                className="p-2 rounded-full hover:bg-gray-100 transition"
+                onClick={async () => {
+                  try {
+                    if (isInWishlist(id)) {
+                      await removeFromWishlist(id);
+                    } else {
+                      await addToWishlist(id);
+                    }
+                  } catch (error) {
+                    // Error is already handled by the context
+                    console.error('Error updating wishlist:', error);
+                  }
+                }}
+                aria-label={isInWishlist(id) ? "Remove from wishlist" : "Add to wishlist"}
+                className={`p-2 rounded-full hover:bg-gray-100 transition ${error ? 'cursor-not-allowed opacity-50' : ''}`}
+                disabled={!!error}
+                title={error || undefined}
               >
-                <Heart className="w-6 h-6" />
+                <Heart 
+                  className={`w-6 h-6 ${isInWishlist(id) ? 'fill-rose-500 text-rose-500' : ''}`} 
+                />
               </button>
               <button
                 aria-label="Share product"

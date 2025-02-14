@@ -67,7 +67,7 @@ export default function ProductManagement() {
     try {
       const response = await fetch('/api/categories');
       if (!response.ok) throw new Error('Failed to fetch categories');
-      const data = await response.json();
+      const { data } = await response.json();
       setCategories(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch categories');
@@ -162,7 +162,7 @@ export default function ProductManagement() {
         </button>
       </div>
 
-      {(isFormVisible || editingProduct) && (
+      {(isFormVisible || editingProduct) && categories.length > 0 && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg shadow-gray-200/50 border border-gray-100">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -177,6 +177,15 @@ export default function ProductManagement() {
                 setEditingProduct(null);
               }}
             />
+          </div>
+        </div>
+      )}
+      {(isFormVisible || editingProduct) && categories.length === 0 && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full shadow-lg shadow-gray-200/50 border border-gray-100">
+            <div className="text-center">
+              <p className="text-gray-600">Loading categories...</p>
+            </div>
           </div>
         </div>
       )}
