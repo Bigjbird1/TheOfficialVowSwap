@@ -15,7 +15,30 @@ export const HeroSection = () => {
               role="img"
               aria-label="Wedding decoration background"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-pink-100/95 to-pink-50/85" />
+            <div className="absolute inset-0 bg-gradient-to-r from-pink-100/95 to-pink-50/85">
+              {/* Floral Pattern */}
+              <svg 
+                className="absolute inset-0 w-full h-full opacity-20"
+                viewBox="0 0 100 100" 
+                preserveAspectRatio="none"
+              >
+                <pattern id="floral" x="0" y="0" width="0.1" height="0.1">
+                  <path 
+                    d="M50 10c-5 0-10 5-10 10s5 10 10 10 10-5 10-10-5-10-10-10zm0 20c-5 0-10 5-10 10s5 10 10 10 10-5 10-10-5-10-10-10zm-20-10c-5 0-10 5-10 10s5 10 10 10 10-5 10-10-5-10-10-10zm40 0c-5 0-10 5-10 10s5 10 10 10 10-5 10-10-5-10-10-10z" 
+                    fill="#E35B96" 
+                    opacity="0.3"
+                  />
+                </pattern>
+                <rect x="0" y="0" width="100" height="100" fill="url(#floral)" />
+              </svg>
+              
+              {/* Geometric Shapes */}
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute -right-20 -top-20 w-60 h-60 bg-pink-200/20 rounded-full mix-blend-multiply" />
+                <div className="absolute -left-20 -bottom-20 w-60 h-60 bg-pink-300/20 rounded-full mix-blend-multiply" />
+                <div className="absolute right-0 bottom-0 w-40 h-40 bg-pink-400/20 rotate-45 transform origin-center" />
+              </div>
+            </div>
           </div>
           
           <div className="relative h-full flex flex-col justify-center p-8">
@@ -56,7 +79,30 @@ export const HeroSection = () => {
               role="img"
               aria-label="Valentine's collection background"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-pink-100/95 to-pink-50/85" />
+            <div className="absolute inset-0 bg-gradient-to-r from-pink-100/95 to-pink-50/85">
+              {/* Floral Pattern */}
+              <svg 
+                className="absolute inset-0 w-full h-full opacity-20"
+                viewBox="0 0 100 100" 
+                preserveAspectRatio="none"
+              >
+                <pattern id="floral2" x="0" y="0" width="0.1" height="0.1">
+                  <path 
+                    d="M50 10c-5 0-10 5-10 10s5 10 10 10 10-5 10-10-5-10-10-10zm0 20c-5 0-10 5-10 10s5 10 10 10 10-5 10-10-5-10-10-10zm-20-10c-5 0-10 5-10 10s5 10 10 10 10-5 10-10-5-10-10-10zm40 0c-5 0-10 5-10 10s5 10 10 10 10-5 10-10-5-10-10-10z" 
+                    fill="#E35B96" 
+                    opacity="0.3"
+                  />
+                </pattern>
+                <rect x="0" y="0" width="100" height="100" fill="url(#floral2)" />
+              </svg>
+              
+              {/* Geometric Shapes */}
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute -left-20 -top-20 w-60 h-60 bg-pink-200/20 rounded-full mix-blend-multiply" />
+                <div className="absolute -right-20 -bottom-20 w-60 h-60 bg-pink-300/20 rounded-full mix-blend-multiply" />
+                <div className="absolute left-0 bottom-0 w-40 h-40 bg-pink-400/20 rotate-45 transform origin-center" />
+              </div>
+            </div>
           </div>
           
           <div className="relative h-full flex flex-col justify-center p-8">
