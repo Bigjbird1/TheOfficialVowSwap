@@ -65,9 +65,9 @@ export const PopularProducts = () => {
     : mockProducts.filter(product => product.category === selectedCategory)
 
   return (
-    <section className="py-12 bg-white">
+    <section className="pt-2 pb-12 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
+        <div className="mb-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Popular Items</h2>
           <div className="flex gap-4">
             <button
@@ -107,7 +107,7 @@ export const PopularProducts = () => {
               href={`/product/${product.id}`}
               className="block bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition"
             >
-              <div className="relative w-full" style={{ paddingBottom: '75%' }}> {/* 4:3 aspect ratio */}
+              <div className="relative w-full" style={{ paddingBottom: '100%' }}> {/* 1:1 aspect ratio */}
                 <Image
                   src={product.image}
                   alt={product.name}
@@ -116,9 +116,9 @@ export const PopularProducts = () => {
                   sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
                 />
               </div>
-              <div className="p-4">
-                <h3 className="text-sm font-medium text-gray-900">{product.name}</h3>
-                <p className="mt-1 text-sm text-gray-900">${product.price}</p>
+              <div className="p-3">
+                <h3 className="text-sm font-medium text-gray-900 truncate">{product.name}</h3>
+                <p className="text-sm text-gray-900">${product.price}</p>
               </div>
             </Link>
           ))}

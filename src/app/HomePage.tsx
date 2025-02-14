@@ -43,8 +43,8 @@ export default function MarketplaceHome() {
     <div className="min-h-screen bg-white">
       <main id="main-content" className="flex-grow">
         <HeroSection />
-        <TrustElements />
         <PopularProducts />
+        <TrustElements />
         <ColorPalette />
         <WeddingThemes />
         <SellerSection />
