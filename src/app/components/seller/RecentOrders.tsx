@@ -31,9 +31,9 @@ export default function RecentOrders() {
       setError(null);
 
       const response = await fetch('/api/seller/dashboard');
-      const errorData = await response.json().catch(() => null);
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
         // Handle specific HTTP status codes
         switch (response.status) {
           case 401:
@@ -48,13 +48,14 @@ export default function RecentOrders() {
             throw new Error('Database connection error. Please try again.');
           default:
             throw new Error(
-              errorData?.details || 
+              errorData?.details ||
               `Server error (${response.status}). Please try again.`
             );
         }
       }
 
-      setData(errorData);
+      const data = await response.json();
+      setData(data);
       setError(null);
     } catch (error) {
       console.error('Dashboard data fetch error:', {
