@@ -43,10 +43,10 @@ interface Seller {
   themeColor?: string;
   accentColor?: string;
   fontFamily?: string;
-  layout: any;
-  socialLinks: any;
-  businessHours: any;
-  policies: any;
+  layout: StorefrontLayout;
+  socialLinks: StorefrontSocialLinks;
+  businessHours: StorefrontBusinessHours;
+  policies: StorefrontPolicies;
   rating: number;
   totalSales: number;
   isVerified: boolean;

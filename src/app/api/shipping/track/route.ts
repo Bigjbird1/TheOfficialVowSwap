@@ -26,11 +26,11 @@ export async function POST(req: NextRequest) {
     );
 
     return NextResponse.json(trackingDetails);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in shipping tracking endpoint:", error);
-    if (error?.name === "ZodError") {
+    if (typeof error === 'object' && error !== null && 'name' in error && error.name === "ZodError" && 'errors' in error) {
       return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
+        { error: "Invalid request data", details: (error as {errors: any}).errors },
         { status: 400 }
       );
     }
@@ -77,11 +77,11 @@ export async function GET(req: NextRequest) {
     );
 
     return NextResponse.json(trackingDetails);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in shipping tracking endpoint:", error);
-    if (error?.name === "ZodError") {
+     if (typeof error === 'object' && error !== null && 'name' in error && error.name === "ZodError" && 'errors' in error) {
       return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
+        { error: "Invalid request data", details: (error as {errors: any}).errors },
         { status: 400 }
       );
     }

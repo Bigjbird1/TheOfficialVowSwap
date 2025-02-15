@@ -35,7 +35,7 @@ export default function ProductsClient({ products, searchParams }: ProductsClien
   // Initialize filters from URL search params
   const [filters, setFilters] = useState<FilterState>(() => {
     const view = getSearchParam("view");
-    let initialFilters: FilterState = {
+    const initialFilters: FilterState = {
       category: getSearchParam("category"),
       subcategory: getSearchParam("subcategory"),
       size: getSearchParam("size"),

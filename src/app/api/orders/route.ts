@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-let orders: any[] = []; // In production, this would be a database
+const orders: {
+  id: string;
+  date: string;
+  status: string;
+  [key: string]: any; // Allow properties from the request body
+  timeline: {
+    status: string;
+    date: string;
+    description: string;
+  }[];
+}[] = []; // In production, this would be a database
 
 export async function POST(request: NextRequest) {
   try {

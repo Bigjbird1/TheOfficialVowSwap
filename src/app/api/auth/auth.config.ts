@@ -1,4 +1,4 @@
-import { NextAuthOptions } from "next-auth";
+import { NextAuthOptions, User } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
@@ -42,7 +42,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
-        } as any; // Type assertion needed because NextAuth's User type doesn't include role by default
+        } as User; // Use the extended User type
       }
     })
   ],

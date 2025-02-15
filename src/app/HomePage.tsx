@@ -40,18 +40,20 @@ export const metadata: Metadata = {
 
 export default function MarketplaceHome() {
   return (
-    <div className="min-h-screen bg-geometric-pattern bg-cover bg-center bg-fixed bg-no-repeat">
+    <div className="min-h-screen bg-geometric-pattern bg-[length:1000px_1000px] bg-center bg-fixed overflow-x-hidden">
       <main id="main-content" className="flex-grow">
-        <HeroSection />
-        <PopularProducts />
-        <TrustElements />
-        <ColorPalette />
-        <WeddingThemes />
-        <SellerSection />
-        <DealOfTheDay />
-        <FeaturedCategories />
-        <Testimonials />
-        <NewsletterSignup />
+        <div className="space-y-24 py-8">
+          <div className="bg-white/80 backdrop-blur-sm"><HeroSection /></div>
+          <div className="bg-white/80 backdrop-blur-sm py-12"><PopularProducts /></div>
+          <div className="bg-white/80 backdrop-blur-sm py-12"><TrustElements /></div>
+          <div className="bg-white/80 backdrop-blur-sm py-12"><ColorPalette /></div>
+          <div className="bg-white/80 backdrop-blur-sm py-12"><WeddingThemes /></div>
+          <div className="bg-white/80 backdrop-blur-sm py-12"><SellerSection /></div>
+          <div className="bg-white/80 backdrop-blur-sm py-12"><DealOfTheDay /></div>
+          <div className="bg-white/80 backdrop-blur-sm py-12"><FeaturedCategories /></div>
+          <div className="bg-white/80 backdrop-blur-sm py-12"><Testimonials /></div>
+          <div className="bg-white/80 backdrop-blur-sm py-12"><NewsletterSignup /></div>
+        </div>
       </main>
       <Footer />
     </div>

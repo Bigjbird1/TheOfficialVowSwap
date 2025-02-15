@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { ProductFilters, SortOption } from '@/app/types/filters';
-import prismaClient from '@prisma/client';
-const { Prisma } = prismaClient;
+import { Prisma } from '@prisma/client';
 
 // Custom error class for API errors
 class APIError extends Error {
@@ -69,16 +68,17 @@ export async function GET(request: NextRequest) {
     };
 
     // Construct where clause based on filters
-    const where: any = {
+    const where: Prisma.ProductWhereInput = {
       isActive: true,
       AND: []
     };
 
-    // Category filter
+ // Category filter
     if (filters.categories?.length) {
       where.AND.push({
-        category: {
-          in: filters.categories
+        categoryId: {
+          in: filters.categories,
+          mode: 'insensitive'
         }
       });
     }
@@ -142,14 +142,9 @@ export async function GET(request: NextRequest) {
         isNewArrival: true
       });
     }
-
-    // Remove empty AND array if no filters applied
-    if (!where.AND?.length) {
-      delete where.AND;
-    }
-
+    
     // Construct orderBy based on sort option
-    let orderBy: any = {};
+    let orderBy: Prisma.ProductOrderByWithRelationInput = {};
     switch (filters.sortBy) {
       case 'price_asc':
         orderBy = { price: 'asc' };
@@ -164,10 +159,7 @@ export async function GET(request: NextRequest) {
         orderBy = { createdAt: 'desc' };
         break;
       case 'new_arrivals':
-        orderBy = [
-          { isNewArrival: 'desc' },
-          { createdAt: 'desc' }
-        ];
+        orderBy = { isNewArrival: 'desc', createdAt: 'desc' };
         break;
       default:
         orderBy = { popularity: 'desc' };

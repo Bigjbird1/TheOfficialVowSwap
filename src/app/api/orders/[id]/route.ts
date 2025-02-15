@@ -2,7 +2,34 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Mock data for development
-let orders: any[] = [{
+const orders: {
+  id: string;
+  date: string;
+  status: string;
+  items: {
+    name: string;
+    quantity: number;
+    price: number;
+    image: string;
+  }[];
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  total: number;
+  shippingAddress: {
+    name: string;
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  timeline: {
+    status: string;
+    date: string;
+    description: string;
+  }[];
+  [key: string]: any; // For other potential properties
+}[] = [{
   id: "WDM-2025-001",
   date: new Date().toISOString(),
   status: "processing",
