@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Product {
   id: string
@@ -10,6 +11,8 @@ interface Product {
   price: number
   image: string
   category: string
+  isNew?: boolean
+  isPopular?: boolean
 }
 
 const mockProducts: Product[] = [
@@ -18,14 +21,16 @@ const mockProducts: Product[] = [
     name: 'Vintage Vases',
     price: 129,
     image: '/placeholder.svg',
-    category: 'Decor'
+    category: 'Decor',
+    isNew: true
   },
   {
     id: '2',
     name: 'Crystal Chandeliers',
     price: 299,
     image: '/placeholder.svg',
-    category: 'Lighting'
+    category: 'Lighting',
+    isPopular: true
   },
   {
     id: '3',
@@ -39,14 +44,16 @@ const mockProducts: Product[] = [
     name: 'Floral Arrangements',
     price: 199,
     image: '/placeholder.svg',
-    category: 'Floral'
+    category: 'Decor',
+    isNew: true
   },
   {
     id: '5',
     name: 'LED Curtains',
     price: 149,
     image: '/placeholder.svg',
-    category: 'Lighting'
+    category: 'Lighting',
+    isPopular: true
   },
   {
     id: '6',
@@ -54,139 +61,149 @@ const mockProducts: Product[] = [
     price: 79,
     image: '/placeholder.svg',
     category: 'Decor'
-  },
-  {
-    id: '7',
-    name: 'Velvet Sofa',
-    price: 799,
-    image: '/placeholder.svg',
-    category: 'Furniture'
-  },
-  {
-    id: '8',
-    name: 'Silk Pillows',
-    price: 89,
-    image: '/placeholder.svg',
-    category: 'Accessories'
-  },
-  {
-    id: '9',
-    name: 'Rose Bouquet',
-    price: 129,
-    image: '/placeholder.svg',
-    category: 'Floral'
-  },
-  {
-    id: '10',
-    name: 'Coffee Table',
-    price: 299,
-    image: '/placeholder.svg',
-    category: 'Furniture'
   }
 ]
 
+const ProductCard = ({ product }: { product: Product }) => {
+  const [isLoading, setIsLoading] = useState(true)
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      className="group"
+    >
+      <Link 
+        href={`/product/${product.id}`}
+        className="block bg-white rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+      >
+        <div className="relative">
+          {/* Skeleton loader */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 animate-pulse" />
+          )}
+          
+          <div className="relative w-full" style={{ paddingBottom: '100%' }}>
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
+              onLoadingComplete={() => setIsLoading(false)}
+            />
+          </div>
+
+          {/* Badges */}
+          <div className="absolute top-2 left-2 flex gap-2">
+            {product.isNew && (
+              <span className="px-2 py-1 text-xs font-medium bg-[#E35B96] text-white rounded-full">
+                New
+              </span>
+            )}
+            {product.isPopular && (
+              <span className="px-2 py-1 text-xs font-medium bg-[#FFC107] text-white rounded-full">
+                Popular
+              </span>
+            )}
+          </div>
+
+          {/* Quick view button */}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <button className="px-4 py-2 bg-white text-[#E35B96] rounded-full text-sm font-medium transform scale-95 hover:scale-100 transition-transform duration-300">
+              Quick View
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4">
+          <h3 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#E35B96] transition-colors duration-300">
+            {product.name}
+          </h3>
+          <p className="text-sm text-gray-900 mt-1 font-medium">
+            ${product.price}
+          </p>
+        </div>
+      </Link>
+    </motion.div>
+  )
+}
+
 export const PopularProducts = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
+  const [isScrolling, setIsScrolling] = useState(false)
+  const [startX, setStartX] = useState(0)
 
   const filteredProducts = selectedCategory === 'All' 
     ? mockProducts
     : mockProducts.filter(product => product.category === selectedCategory)
 
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsScrolling(true)
+    setStartX(e.pageX - e.currentTarget.offsetLeft)
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isScrolling) return
+    e.preventDefault()
+    const x = e.pageX - e.currentTarget.offsetLeft
+    const walk = (x - startX) * 2
+    e.currentTarget.scrollLeft = e.currentTarget.scrollLeft - walk
+  }
+
+  const handleMouseUp = () => {
+    setIsScrolling(false)
+  }
+
   return (
     <section className="pt-2 pb-12 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Popular Items</h2>
-          <div className="flex gap-4 items-center">
-            <button
-              onClick={() => setSelectedCategory('All')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
-                ${selectedCategory === 'All' 
-                  ? 'bg-[#E35B96] text-white' 
-                  : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setSelectedCategory('Decor')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
-                ${selectedCategory === 'Decor' 
-                  ? 'bg-[#E35B96] text-white' 
-                  : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              Decor
-            </button>
-            <button
-              onClick={() => setSelectedCategory('Lighting')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
-                ${selectedCategory === 'Lighting' 
-                  ? 'bg-[#E35B96] text-white' 
-                  : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              Lighting
-            </button>
-            <button
-              onClick={() => setSelectedCategory('Furniture')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
-                ${selectedCategory === 'Furniture' 
-                  ? 'bg-[#E35B96] text-white' 
-                  : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              Furniture
-            </button>
-            <div className="relative">
-              <button
-                className="px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900"
+        <div className="mb-8">
+          <motion.h2 
+            className="text-2xl font-bold text-gray-900 mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            Popular Items
+          </motion.h2>
+
+          {/* Horizontal scrollable category filters */}
+          <div 
+            className="flex gap-4 overflow-x-auto pb-4 cursor-grab active:cursor-grabbing scrollbar-hide"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            {['All', 'Decor', 'Lighting'].map((category) => (
+              <motion.button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap
+                  ${selectedCategory === category 
+                    ? 'bg-gradient-to-r from-[#E35B96] to-[#FF8FB1] text-white shadow-lg' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                More
-              </button>
-              <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-lg shadow-lg z-10 hidden hover:block">
-                <button
-                  onClick={() => setSelectedCategory('Accessories')}
-                  className={`w-full px-4 py-2 text-sm text-left rounded-lg
-                    ${selectedCategory === 'Accessories' 
-                      ? 'bg-[#E35B96] text-white' 
-                      : 'text-gray-600 hover:bg-gray-100'}`}
-                >
-                  Accessories
-                </button>
-                <button
-                  onClick={() => setSelectedCategory('Floral')}
-                  className={`w-full px-4 py-2 text-sm text-left rounded-lg
-                    ${selectedCategory === 'Floral' 
-                      ? 'bg-[#E35B96] text-white' 
-                      : 'text-gray-600 hover:bg-gray-100'}`}
-                >
-                  Floral
-                </button>
-              </div>
-            </div>
+                {category}
+              </motion.button>
+            ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
-            <Link 
-              key={product.id}
-              href={`/product/${product.id}`}
-              className="block bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition"
-            >
-              <div className="relative w-full" style={{ paddingBottom: '100%' }}> {/* 1:1 aspect ratio */}
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
-                />
-              </div>
-              <div className="p-3">
-                <h3 className="text-sm font-medium text-gray-900 truncate">{product.name}</h3>
-                <p className="text-sm text-gray-900">${product.price}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <AnimatePresence>
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+            layout
+          >
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </section>
   )

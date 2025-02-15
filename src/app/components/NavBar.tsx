@@ -159,12 +159,13 @@ export default function NavBar() {
           </div>
 
           <div className="flex items-center gap-6">
-            <button 
+            <Link 
+              href="/liked-items"
               aria-label="Favorites" 
               className="text-gray-600 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-[#E35B96] focus:ring-offset-2 rounded-full p-1"
             >
               <Heart className="w-5 h-5" />
-            </button>
+            </Link>
             <button 
               aria-label="Shopping Bag" 
               className="text-gray-600 hover:text-gray-900 transition relative focus:outline-none focus:ring-2 focus:ring-[#E35B96] focus:ring-offset-2 rounded-full p-1"

@@ -1,21 +1,38 @@
 "use client"
 
 import { useAuthRedirect } from "@/app/hooks/useAuthRedirect"
+import { useEffect, useState } from "react"
+import { motion } from "framer-motion"
 
 export const HeroSection = () => {
   const { handleStartSelling } = useAuthRedirect()
+  const [scrollY, setScrollY] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY)
+    }
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
   return (
-    <section className="w-full pt-4 pb-2">
+    <section className="w-full pt-4 pb-2 relative">
       <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Left Column - Hero Content */}
-        <div className="relative h-[400px] rounded-lg overflow-hidden">
-          <div className="absolute inset-0">
+        <motion.div 
+          className="relative h-[400px] rounded-lg overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="absolute inset-0 transform" style={{ transform: `translateY(${scrollY * 0.3}px)` }}>
             <div 
-              className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center"
+              className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center transition-transform duration-300"
               role="img"
               aria-label="Wedding decoration background"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-pink-100/95 to-pink-50/85">
+            <div className="absolute inset-0 backdrop-blur-sm bg-gradient-to-r from-pink-100/80 to-pink-50/70">
               {/* Floral Pattern */}
               <svg 
                 className="absolute inset-0 w-full h-full opacity-20"
@@ -41,45 +58,85 @@ export const HeroSection = () => {
             </div>
           </div>
           
-          <div className="relative h-full flex flex-col justify-center p-6">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-[1.1]">
-            Find Your Perfect Wedding Decorations
-          </h1>
-          
-          <h2 className="text-xl md:text-2xl text-gray-800 mt-4">
-            Shop thousands of pre-loved wedding items
-          </h2>
-          
-          <p className="text-base text-gray-700 mt-4">
-            Join our community of newlyweds buying and selling wedding decorations, making dream weddings more affordable and sustainable.
-          </p>
+          <div className="relative h-full flex flex-col justify-center p-6 z-10">
+            <motion.h1 
+              className="text-4xl md:text-5xl font-bold text-gray-900 leading-[1.1]"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              Find Your Perfect Wedding Decorations
+            </motion.h1>
+            
+            <motion.h2 
+              className="text-xl md:text-2xl text-gray-800 mt-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              Shop thousands of pre-loved wedding items
+            </motion.h2>
+            
+            <motion.p 
+              className="text-base text-gray-700 mt-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              Join our community of newlyweds buying and selling wedding decorations, making dream weddings more affordable and sustainable.
+            </motion.p>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-6">
-            <a 
-              href="/products"
-              className="h-12 flex items-center justify-center bg-[#E35B96] text-white rounded-full hover:bg-[#d14a85] transition px-8"
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 mt-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
             >
-              Shop Now
-            </a>
-            <button 
-              onClick={handleStartSelling}
-              className="h-12 flex items-center justify-center bg-white text-[#E35B96] rounded-full hover:bg-gray-100 transition px-8"
-            >
-              Start Selling
-            </button>
+              <motion.a 
+                href="/products"
+                className="h-12 flex items-center justify-center bg-gradient-to-r from-[#E35B96] to-[#FF8FB1] text-white rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300 px-8 relative overflow-hidden group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="relative z-10">Shop Now</span>
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              </motion.a>
+              <motion.button 
+                onClick={handleStartSelling}
+                className="h-12 flex items-center justify-center bg-white text-[#E35B96] rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300 px-8 relative overflow-hidden group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="relative z-10">Start Selling</span>
+                <div className="absolute inset-0 bg-[#E35B96] opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              </motion.button>
+              <motion.a 
+                href="/registry/create"
+                className="h-12 flex items-center justify-center bg-gradient-to-r from-[#FFC107] to-[#FFD54F] text-white font-bold rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300 px-8 relative overflow-hidden group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="relative z-10">Create Your Registry</span>
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              </motion.a>
+            </motion.div>
           </div>
-          </div>
-        </div>
+        </motion.div>
 
         {/* Right Column - Featured Collection */}
-        <div className="relative h-[400px] rounded-lg overflow-hidden">
-          <div className="absolute inset-0">
+        <motion.div 
+          className="relative h-[400px] rounded-lg overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <div className="absolute inset-0 transform" style={{ transform: `translateY(${scrollY * 0.3}px)` }}>
             <div 
-              className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center"
+              className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center transition-transform duration-300"
               role="img"
               aria-label="Valentine's collection background"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-pink-100/95 to-pink-50/85">
+            <div className="absolute inset-0 backdrop-blur-sm bg-gradient-to-r from-pink-100/80 to-pink-50/70">
               {/* Floral Pattern */}
               <svg 
                 className="absolute inset-0 w-full h-full opacity-20"
@@ -105,20 +162,42 @@ export const HeroSection = () => {
             </div>
           </div>
           
-          <div className="relative h-full flex flex-col justify-center p-6">
-            <span className="text-[#E35B96] font-medium mb-4">Featured Collection</span>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Valentine's Day Special</h2>
-            <p className="text-gray-700 mb-6">
-              Discover our curated collection of romantic wedding decorations perfect for your Valentine's themed celebration. Save up to 40% on selected items.
-            </p>
-            <a 
-              href="/products?collection=valentines"
-              className="inline-flex items-center justify-center h-12 bg-white text-[#E35B96] rounded-full hover:bg-gray-100 transition px-8 w-fit"
+          <div className="relative h-full flex flex-col justify-center p-6 z-10">
+            <motion.span 
+              className="text-[#E35B96] font-medium mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
             >
-              Shop Collection
-            </a>
+              Featured Collection
+            </motion.span>
+            <motion.h2 
+              className="text-2xl font-bold text-gray-900 mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+            >
+              Valentine's Day Special
+            </motion.h2>
+            <motion.p 
+              className="text-gray-700 mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+            >
+              Discover our curated collection of romantic wedding decorations perfect for your Valentine's themed celebration. Save up to 40% on selected items.
+            </motion.p>
+            <motion.a 
+              href="/products?collection=valentines"
+              className="inline-flex items-center justify-center h-12 bg-gradient-to-r from-white to-gray-50 text-[#E35B96] rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300 px-8 w-fit group"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <span className="relative z-10">Shop Collection</span>
+              <div className="absolute inset-0 bg-[#E35B96] opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-full"></div>
+            </motion.a>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   )
