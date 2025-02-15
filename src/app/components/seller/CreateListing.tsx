@@ -112,7 +112,11 @@ const CreateListing = () => {
         body: submitData
       });
 
-      if (!response.ok) throw new Error('Failed to create listing');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create listing');
+      }
 
       setSubmitStatus({
         type: 'success',
@@ -125,7 +129,7 @@ const CreateListing = () => {
     } catch (error) {
       setSubmitStatus({
         type: 'error',
-        message: 'Failed to create listing. Please try again.'
+        message: error instanceof Error ? error.message : 'Failed to create listing. Please try again.'
       });
     } finally {
       setIsSubmitting(false);

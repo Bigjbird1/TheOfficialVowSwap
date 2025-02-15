@@ -102,12 +102,23 @@ export async function POST(req: Request) {
 
     // Only create Prisma user if Supabase user was created successfully
     try {
+      // Create user with SELLER role
       prismaUser = await prisma.user.create({
         data: {
           id: supabaseUser.id, // Use Supabase user ID
           email,
           password: hashedPassword,
           name: name || null,
+          role: 'SELLER', // Set role as SELLER by default
+        },
+      });
+
+      // Create seller profile automatically
+      await prisma.seller.create({
+        data: {
+          userId: prismaUser.id,
+          storeName: `${name || 'New'}'s Store`,
+          contactEmail: email,
         },
       });
     } catch (error) {

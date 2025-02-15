@@ -54,7 +54,8 @@ export default function ProductManagement() {
     try {
       const response = await fetch('/api/seller/products');
       if (!response.ok) throw new Error('Failed to fetch products');
-      const data = await response.json();
+      const { data } = await response.json();
+      if (!data) throw new Error('No products data received');
       setProducts(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch products');
