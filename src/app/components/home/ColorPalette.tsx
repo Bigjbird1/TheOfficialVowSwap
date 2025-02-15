@@ -20,16 +20,16 @@ const colorSchemes: ColorScheme[] = [
   {
     name: "Classic Romance",
     colors: ["#F8C3DC", "#FFFFFF", "#FFD700", "#C0C0C0"],
-    image: "/images/palettes/classic-romance.jpg",
+    image: "/geometric-pattern.svg",
     accessories: [
       {
         name: "Gold Table Runner",
-        image: "/images/products/gold-runner.jpg",
+        image: "/window.svg",
         price: 29.99
       },
       {
         name: "Silver Candle Holders",
-        image: "/images/products/silver-holders.jpg",
+        image: "/window.svg",
         price: 39.99
       }
     ]
@@ -37,16 +37,16 @@ const colorSchemes: ColorScheme[] = [
   {
     name: "Garden Fresh",
     colors: ["#90EE90", "#FFFFFF", "#FFB6C1", "#E6E6FA"],
-    image: "/images/palettes/garden-fresh.jpg",
+    image: "/geometric-pattern.svg",
     accessories: [
       {
         name: "Floral Centerpiece",
-        image: "/images/products/floral-centerpiece.jpg",
+        image: "/window.svg",
         price: 49.99
       },
       {
         name: "Lavender Votives",
-        image: "/images/products/lavender-votives.jpg",
+        image: "/window.svg",
         price: 24.99
       }
     ]
@@ -54,16 +54,16 @@ const colorSchemes: ColorScheme[] = [
   {
     name: "Ocean Breeze",
     colors: ["#87CEEB", "#E0FFFF", "#48D1CC", "#FFFFFF"],
-    image: "/images/palettes/ocean-breeze.jpg",
+    image: "/geometric-pattern.svg",
     accessories: [
       {
         name: "Seashell Decor Set",
-        image: "/images/products/seashell-set.jpg",
+        image: "/window.svg",
         price: 34.99
       },
       {
         name: "Aqua Table Runners",
-        image: "/images/products/aqua-runner.jpg",
+        image: "/window.svg",
         price: 27.99
       }
     ]
@@ -71,16 +71,16 @@ const colorSchemes: ColorScheme[] = [
   {
     name: "Autumn Sunset",
     colors: ["#FFA500", "#8B4513", "#DAA520", "#F4A460"],
-    image: "/images/palettes/autumn-sunset.jpg",
+    image: "/geometric-pattern.svg",
     accessories: [
       {
         name: "Copper Lanterns",
-        image: "/images/products/copper-lantern.jpg",
+        image: "/window.svg",
         price: 44.99
       },
       {
         name: "Rustic Wood Accents",
-        image: "/images/products/wood-accents.jpg",
+        image: "/window.svg",
         price: 32.99
       }
     ]

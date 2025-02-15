@@ -28,7 +28,7 @@ export const HeroSection = () => {
         >
           <div className="absolute inset-0 transform" style={{ transform: `translateY(${scrollY * 0.3}px)` }}>
             <div 
-              className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center transition-transform duration-300"
+              className="absolute inset-0 bg-geometric-pattern bg-cover bg-center transition-transform duration-300"
               role="img"
               aria-label="Wedding decoration background"
             />
@@ -132,7 +132,7 @@ export const HeroSection = () => {
         >
           <div className="absolute inset-0 transform" style={{ transform: `translateY(${scrollY * 0.3}px)` }}>
             <div 
-              className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center transition-transform duration-300"
+              className="absolute inset-0 bg-geometric-pattern bg-cover bg-center transition-transform duration-300"
               role="img"
               aria-label="Valentine's collection background"
             />

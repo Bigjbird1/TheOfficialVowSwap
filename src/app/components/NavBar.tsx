@@ -17,7 +17,10 @@ function AuthButtons() {
   if (session) {
     return (
       <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="flex items-center gap-2 hover:text-[#E35B96] transition">
+        <Link 
+          href="/dashboard"
+          className="flex items-center gap-2 hover:text-[#E35B96] transition"
+        >
           <User className="w-5 h-5" />
           <span className="text-sm">{session.user?.name}</span>
         </Link>
@@ -27,12 +30,6 @@ function AuthButtons() {
         >
           Sign Out
         </button>
-        <Link 
-          href="/seller/dashboard" 
-          className="px-6 py-2 bg-[#E35B96] text-white rounded-full hover:bg-[#d14a85] transition focus:outline-none focus:ring-2 focus:ring-[#E35B96] focus:ring-offset-2"
-        >
-          Start Selling
-        </Link>
       </div>
     )
   }
@@ -54,6 +51,7 @@ function AuthButtons() {
 }
 
 export default function NavBar() {
+  const { data: session } = useSession();
   // State management
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -192,17 +190,25 @@ export default function NavBar() {
             </button>
             <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
             <AuthButtons />
+            {session?.user?.role !== 'SELLER' && session?.user?.role !== 'ADMIN' && (
+              <Link 
+                href="/seller/dashboard" 
+                className="px-6 py-2 bg-[#E35B96] text-white rounded-full hover:bg-[#d14a85] transition focus:outline-none focus:ring-2 focus:ring-[#E35B96] focus:ring-offset-2"
+              >
+                Start Selling
+              </Link>
+            )}
           </div>
         </div>
 
         <nav className="hidden lg:flex items-center gap-4 text-base py-2 overflow-x-auto relative border-t">
           {navigationData.map((category) => (
-<div
-  key={category.name}
-  onMouseEnter={() => handleCategoryHover(category.name)}
-  onMouseLeave={() => handleCategoryHover(null)}
-  className="relative group flex flex-col items-center z-[9999]"
->
+            <div
+              key={category.name}
+              onMouseEnter={() => handleCategoryHover(category.name)}
+              onMouseLeave={() => handleCategoryHover(null)}
+              className="relative group flex flex-col items-center z-[9999]"
+            >
               <Link
                 href={category.href}
                 className={`text-gray-600 hover:text-gray-900 transition-colors duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#E35B96] focus:ring-offset-2 rounded-full px-4 py-2 ${

@@ -27,6 +27,11 @@ export default withAuth(
     else if (isSellerRoute && !['SELLER', 'ADMIN'].includes(token?.role || '')) {
       return NextResponse.redirect(new URL('/', req.url));
     }
+    
+    // If user is a seller and trying to access main dashboard (but not already trying to access seller dashboard), redirect to seller dashboard
+    else if (pathname === '/dashboard' && token?.role === 'SELLER' && !pathname.startsWith('/seller')) {
+      return NextResponse.redirect(new URL('/seller/dashboard', req.url));
+    }
 
     return NextResponse.next();
   },

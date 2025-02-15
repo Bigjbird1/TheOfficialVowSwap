@@ -23,22 +23,22 @@ const themes: WeddingTheme[] = [
   {
     name: "Rustic Charm",
     description: "Blend natural elements with vintage touches for a warm, inviting atmosphere",
-    image: "/images/themes/rustic.jpg",
+    image: "/geometric-pattern.svg",
     popularItems: [
       {
         name: "Mason Jar Lights",
         price: 34.99,
-        image: "/images/products/mason-lights.jpg"
+        image: "/window.svg"
       },
       {
         name: "Wooden Table Numbers",
         price: 24.99,
-        image: "/images/products/wood-numbers.jpg"
+        image: "/window.svg"
       },
       {
         name: "Burlap Table Runner",
         price: 29.99,
-        image: "/images/products/burlap-runner.jpg"
+        image: "/window.svg"
       }
     ],
     features: [
@@ -52,22 +52,22 @@ const themes: WeddingTheme[] = [
   {
     name: "Modern Minimalist",
     description: "Clean lines and sophisticated simplicity for a contemporary celebration",
-    image: "/images/themes/modern.jpg",
+    image: "/geometric-pattern.svg",
     popularItems: [
       {
         name: "Geometric Centerpiece",
         price: 45.99,
-        image: "/images/products/geometric-center.jpg"
+        image: "/window.svg"
       },
       {
         name: "Acrylic Table Numbers",
         price: 39.99,
-        image: "/images/products/acrylic-numbers.jpg"
+        image: "/window.svg"
       },
       {
         name: "Metal Candle Holders",
         price: 49.99,
-        image: "/images/products/metal-holders.jpg"
+        image: "/window.svg"
       }
     ],
     features: [
@@ -81,22 +81,22 @@ const themes: WeddingTheme[] = [
   {
     name: "Vintage Romance",
     description: "Timeless elegance with classic details and soft, romantic touches",
-    image: "/images/themes/vintage.jpg",
+    image: "/geometric-pattern.svg",
     popularItems: [
       {
         name: "Antique Frame Set",
         price: 59.99,
-        image: "/images/products/antique-frames.jpg"
+        image: "/window.svg"
       },
       {
         name: "Pearl Centerpiece",
         price: 44.99,
-        image: "/images/products/pearl-center.jpg"
+        image: "/window.svg"
       },
       {
         name: "Lace Table Runner",
         price: 34.99,
-        image: "/images/products/lace-runner.jpg"
+        image: "/window.svg"
       }
     ],
     features: [
@@ -110,22 +110,22 @@ const themes: WeddingTheme[] = [
   {
     name: "Bohemian Spirit",
     description: "Free-spirited and eclectic with rich textures and organic elements",
-    image: "/images/themes/bohemian.jpg",
+    image: "/geometric-pattern.svg",
     popularItems: [
       {
         name: "Macramé Backdrop",
         price: 89.99,
-        image: "/images/products/macrame.jpg"
+        image: "/window.svg"
       },
       {
         name: "Pampas Grass Set",
         price: 49.99,
-        image: "/images/products/pampas.jpg"
+        image: "/window.svg"
       },
       {
         name: "Rattan Lanterns",
         price: 39.99,
-        image: "/images/products/rattan-lanterns.jpg"
+        image: "/window.svg"
       }
     ],
     features: [
@@ -139,22 +139,22 @@ const themes: WeddingTheme[] = [
   {
     name: "Classic Elegance",
     description: "Sophisticated and refined with timeless design elements",
-    image: "/images/themes/classic.jpg",
+    image: "/geometric-pattern.svg",
     popularItems: [
       {
         name: "Crystal Candelabra",
         price: 129.99,
-        image: "/images/products/candelabra.jpg"
+        image: "/window.svg"
       },
       {
         name: "Silver Charger Plates",
         price: 79.99,
-        image: "/images/products/charger-plates.jpg"
+        image: "/window.svg"
       },
       {
         name: "Silk Table Runner",
         price: 54.99,
-        image: "/images/products/silk-runner.jpg"
+        image: "/window.svg"
       }
     ],
     features: [
