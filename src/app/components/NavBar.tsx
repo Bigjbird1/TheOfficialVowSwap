@@ -123,8 +123,20 @@ export default function NavBar() {
             </button>
           </div>
           <Link href="/">
-            <div className="text-2xl font-bold bg-gradient-to-r from-[#E35B96] to-[#8B5CF6] bg-clip-text text-transparent cursor-pointer">
-              VowSwap
+            <div className="flex items-center">
+              <svg width="40" height="32" viewBox="0 0 100 100">
+                <path d="M25,60 C25,40 0,40 0,60 C0,80 25,90 25,90 C25,90 50,80 50,60 C50,40 25,40 25,60" 
+                      fill="#FF6B6B" 
+                      opacity="0.85"
+                      transform="translate(0, -20) rotate(-15, 25, 70)"/>
+                <path d="M75,60 C75,40 50,40 50,60 C50,80 75,90 75,90 C75,90 100,80 100,60 C100,40 75,40 75,60" 
+                      fill="#4A90E2" 
+                      opacity="0.85"
+                      transform="translate(0, -20) rotate(15, 75, 70)"/>
+              </svg>
+              <div className="text-2xl font-bold bg-gradient-to-r from-[#E35B96] to-[#8B5CF6] bg-clip-text text-transparent cursor-pointer">
+                VowSwap
+              </div>
             </div>
           </Link>
 
