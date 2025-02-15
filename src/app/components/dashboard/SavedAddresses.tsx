@@ -1,330 +1,263 @@
-"use client";
+import React, { useState } from 'react';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Alert } from '../ui/alert';
+import { Address, AddressManagerProps } from '@/app/types/dashboard';
 
-import { useState } from "react";
-import { AddressManagerProps } from "@/app/types/dashboard";
-import type { Address } from "@prisma/client";
-import { toast } from "react-hot-toast";
+type AddressFormData = {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  isDefault: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-export default function SavedAddresses({
+const initialFormData: AddressFormData = {
+  street: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  country: 'US',
+  isDefault: false,
+  createdAt: new Date(),
+  updatedAt: new Date()
+};
+
+const SavedAddresses: React.FC<AddressManagerProps> = ({
   addresses,
   onAddAddress,
   onUpdateAddress,
   onDeleteAddress,
-  isLoading,
-}: AddressManagerProps) {
-  const [isEditing, setIsEditing] = useState<string | null>(null);
-  const [newAddress, setNewAddress] = useState<Partial<Address>>({});
-  const [error, setError] = useState<string | null>(null);
+  isLoading
+}) => {
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<AddressFormData>(initialFormData);
 
-  const handleAddAddress = async (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+      updatedAt: new Date()
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
-    try {
-      await onAddAddress(newAddress as Omit<Address, "id" | "userId">);
-      setNewAddress({});
-      setIsEditing(null);
-      toast.success("Address added successfully");
-    } catch (error) {
-      setError("Failed to add address. Please try again.");
-      toast.error("Failed to add address");
-    }
-  };
-
-  const handleUpdateAddress = async (id: string, updates: Partial<Address>) => {
-    setError(null);
-    try {
-      await onUpdateAddress(id, updates);
-      setIsEditing(null);
-      toast.success("Address updated successfully");
-    } catch (error) {
-      setError("Failed to update address. Please try again.");
-      toast.error("Failed to update address");
-    }
-  };
-
-  const handleDeleteAddress = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this address?")) {
-      return;
-    }
     
-    setError(null);
+    try {
+      if (editingId) {
+        await onUpdateAddress(editingId, formData);
+        setEditingId(null);
+      } else {
+        await onAddAddress(formData);
+      }
+
+      // Reset form
+      setFormData(initialFormData);
+      setIsAddingNew(false);
+    } catch (error) {
+      console.error('Error saving address:', error);
+    }
+  };
+
+  const handleEdit = (address: Address) => {
+    setFormData({
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      country: address.country,
+      isDefault: address.isDefault,
+      createdAt: address.createdAt,
+      updatedAt: new Date()
+    });
+    setEditingId(address.id);
+    setIsAddingNew(true);
+  };
+
+  const handleDelete = async (id: string) => {
     try {
       await onDeleteAddress(id);
-      toast.success("Address deleted successfully");
     } catch (error) {
-      setError("Failed to delete address. Please try again.");
-      toast.error("Failed to delete address");
-    }
-  };
-
-  const handleSetDefault = async (id: string) => {
-    setError(null);
-    try {
-      await onUpdateAddress(id, { isDefault: true });
-      toast.success("Default address updated");
-    } catch (error) {
-      setError("Failed to set default address. Please try again.");
-      toast.error("Failed to update default address");
+      console.error('Error deleting address:', error);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {[...Array(2)].map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="h-32 bg-gray-200 rounded-lg dark:bg-gray-700"></div>
-          </div>
-        ))}
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Saved Addresses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="animate-pulse space-y-4">
+              <div className="h-24 bg-gray-200 rounded-lg"></div>
+              <div className="h-24 bg-gray-200 rounded-lg"></div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
-      
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Saved Addresses</h2>
-        <button
-          onClick={() => setIsEditing("new")}
-          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
-        >
-          Add New Address
-        </button>
-      </div>
-
-      {/* Address List */}
-      <div className="space-y-4">
-        {addresses.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            No addresses saved yet. Add your first address to get started.
-          </div>
-        ) : (
-          addresses.map((address) => (
-            <div
-              key={address.id}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 transition-shadow hover:shadow-md"
-            >
-              {isEditing === address.id ? (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleUpdateAddress(address.id, newAddress);
-                  }}
-                  className="space-y-4"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      placeholder="Street"
-                      defaultValue={address.street}
-                      onChange={(e) =>
-                        setNewAddress({ ...newAddress, street: e.target.value })
-                      }
-                      className="border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-2 w-full focus:ring-2 focus:ring-primary"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="City"
-                      defaultValue={address.city}
-                      onChange={(e) =>
-                        setNewAddress({ ...newAddress, city: e.target.value })
-                      }
-                      className="border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-2 w-full focus:ring-2 focus:ring-primary"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="State"
-                      defaultValue={address.state}
-                      onChange={(e) =>
-                        setNewAddress({ ...newAddress, state: e.target.value })
-                      }
-                      className="border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-2 w-full focus:ring-2 focus:ring-primary"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="ZIP Code"
-                      defaultValue={address.zipCode}
-                      onChange={(e) =>
-                        setNewAddress({ ...newAddress, zipCode: e.target.value })
-                      }
-                      className="border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-2 w-full focus:ring-2 focus:ring-primary"
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="Country"
-                      defaultValue={address.country}
-                      onChange={(e) =>
-                        setNewAddress({ ...newAddress, country: e.target.value })
-                      }
-                      className="border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-2 w-full focus:ring-2 focus:ring-primary"
-                      required
-                    />
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newAddress.isDefault || false}
-                        onChange={(e) =>
-                          setNewAddress({ ...newAddress, isDefault: e.target.checked })
-                        }
-                        className="rounded border-gray-300 text-primary focus:ring-primary"
-                      />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">Set as default address</span>
-                    </label>
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(null)}
-                      className="px-4 py-2 border dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+    <div className="max-w-4xl mx-auto p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Saved Addresses</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {addresses.length === 0 && !isAddingNew ? (
+            <Alert>
+              <p className="text-sm">
+                No addresses saved yet. Add your first address to get started.
+              </p>
+            </Alert>
+          ) : (
+            <div className="space-y-6">
+              {/* List of saved addresses */}
+              {!isAddingNew && addresses.map((address) => (
+                <div key={address.id} className="border rounded-lg p-4 relative">
+                  <div className="absolute right-4 top-4 flex gap-2">
+                    <button 
+                      onClick={() => handleEdit(address)}
+                      className="text-gray-600 hover:text-gray-900"
                     >
-                      Cancel
+                      <Edit className="w-5 h-5" />
                     </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+                    <button 
+                      onClick={() => handleDelete(address.id)}
+                      className="text-gray-600 hover:text-red-600"
                     >
-                      Save Changes
+                      <Trash2 className="w-5 h-5" />
                     </button>
-                  </div>
-                </form>
-              ) : (
-                <>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">{address.street}</p>
-                      <p className="text-gray-600 dark:text-gray-300">
-                        {address.city}, {address.state} {address.zipCode}
-                      </p>
-                      <p className="text-gray-600 dark:text-gray-300">{address.country}</p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      {!address.isDefault && (
-                        <button
-                          onClick={() => handleSetDefault(address.id)}
-                          className="text-sm text-primary hover:text-primary-dark transition-colors"
-                        >
-                          Set as Default
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setIsEditing(address.id)}
-                        className="text-primary hover:text-primary-dark transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteAddress(address.id)}
-                        className="text-red-600 hover:text-red-800 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
                   </div>
                   {address.isDefault && (
-                    <span className="mt-2 inline-block px-2 py-1 text-xs bg-primary-50 dark:bg-primary-900 text-primary rounded">
-                      Default Address
+                    <span className="bg-rose-100 text-rose-600 text-sm px-2 py-1 rounded-full">
+                      Default
                     </span>
                   )}
-                </>
-              )}
+                  <div className="mt-2">
+                    <p>{address.street}</p>
+                    <p>{`${address.city}, ${address.state} ${address.zipCode}`}</p>
+                    <p className="text-gray-600">{address.country}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))
-        )}
-      </div>
+          )}
 
-      {/* Add New Address Form */}
-      {isEditing === "new" && (
-        <form onSubmit={handleAddAddress} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Add New Address</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Street"
-              onChange={(e) =>
-                setNewAddress({ ...newAddress, street: e.target.value })
-              }
-              className="border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-2 w-full focus:ring-2 focus:ring-primary"
-              required
-            />
-            <input
-              type="text"
-              placeholder="City"
-              onChange={(e) =>
-                setNewAddress({ ...newAddress, city: e.target.value })
-              }
-              className="border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-2 w-full focus:ring-2 focus:ring-primary"
-              required
-            />
-            <input
-              type="text"
-              placeholder="State"
-              onChange={(e) =>
-                setNewAddress({ ...newAddress, state: e.target.value })
-              }
-              className="border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-2 w-full focus:ring-2 focus:ring-primary"
-              required
-            />
-            <input
-              type="text"
-              placeholder="ZIP Code"
-              onChange={(e) =>
-                setNewAddress({ ...newAddress, zipCode: e.target.value })
-              }
-              className="border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-2 w-full focus:ring-2 focus:ring-primary"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Country"
-              onChange={(e) =>
-                setNewAddress({ ...newAddress, country: e.target.value })
-              }
-              className="border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-2 w-full focus:ring-2 focus:ring-primary"
-              required
-            />
-          </div>
-          <div className="flex items-center space-x-4">
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={newAddress.isDefault || false}
-                onChange={(e) =>
-                  setNewAddress({ ...newAddress, isDefault: e.target.checked })
-                }
-                className="rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <span className="text-sm text-gray-600 dark:text-gray-300">Set as default address</span>
-            </label>
-          </div>
-          <div className="flex justify-end space-x-2">
+          {/* Add/Edit Address Form */}
+          {isAddingNew ? (
+            <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Street Address</label>
+                  <input
+                    type="text"
+                    name="street"
+                    value={formData.street}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">City</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">State</label>
+                  <input
+                    type="text"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
+                  <input
+                    type="text"
+                    name="zipCode"
+                    value={formData.zipCode}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Country</label>
+                  <input
+                    type="text"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="isDefault"
+                  checked={formData.isDefault}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-rose-500 rounded border-gray-300"
+                />
+                <label className="ml-2 text-sm text-gray-700">Set as default address</label>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="submit"
+                  className="bg-rose-500 text-white px-4 py-2 rounded-md hover:bg-rose-600"
+                >
+                  {editingId ? 'Update Address' : 'Save Address'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingNew(false);
+                    setEditingId(null);
+                    setFormData(initialFormData);
+                  }}
+                  className="border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
             <button
-              type="button"
-              onClick={() => setIsEditing(null)}
-              className="px-4 py-2 border dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setIsAddingNew(true)}
+              className="mt-6 flex items-center gap-2 text-rose-500 hover:text-rose-600"
             >
-              Cancel
+              <PlusCircle className="w-5 h-5" />
+              Add New Address
             </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
-            >
-              Add Address
-            </button>
-          </div>
-        </form>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default SavedAddresses;

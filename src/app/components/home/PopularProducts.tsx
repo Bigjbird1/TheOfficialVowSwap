@@ -122,13 +122,14 @@ const ProductCard = ({ product, onQuickViewClick }: { product: ProductType; onQu
   const [isLoading, setIsLoading] = useState(true)
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      className="group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-    >
+    <Link href={`/product/${product.id}`}>
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        className="group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+      >
       <div className="relative">
         {/* Skeleton loader */}
         {isLoading && (
@@ -173,6 +174,7 @@ const ProductCard = ({ product, onQuickViewClick }: { product: ProductType; onQu
         </p>
       </div>
     </motion.div>
+    </Link>
   )
 }
 
