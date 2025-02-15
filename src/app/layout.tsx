@@ -22,6 +22,35 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Preload critical fonts */}
+        <link
+          rel="preload"
+          href="/_next/static/media/geist-regular.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+        
+        {/* Preload critical CSS */}
+        <link
+          rel="preload"
+          href="/globals.css"
+          as="style"
+        />
+        
+        {/* Preload critical images for above-the-fold content */}
+        <link
+          rel="preload"
+          href="/logo.svg"
+          as="image"
+          type="image/svg+xml"
+        />
+        
+        {/* DNS prefetch for external resources */}
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
