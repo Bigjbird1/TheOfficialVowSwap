@@ -62,7 +62,7 @@ const ProductQuickView: React.FC<ProductQuickViewProps> = ({ product, onClose })
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-white rounded-2xl shadow-xl w-full max-w-2xl relative mx-4"
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl w-[calc(100%-2rem)] max-w-2xl max-h-[90vh] overflow-y-auto"
         >
         <button
           onClick={onClose}
