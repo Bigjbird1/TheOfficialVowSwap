@@ -1,48 +1,60 @@
-import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token;
-    const pathname = req.nextUrl.pathname;
-    
-    // Check admin routes
-    const isAdminRoute = pathname.startsWith('/admin');
-    const isModerationRoute = pathname.startsWith('/admin/moderation') || 
-                             pathname.startsWith('/api/admin/moderation');
-    const isSellerRoute = pathname.startsWith('/seller') || 
-                         pathname.startsWith('/api/seller');
+export async function middleware(request: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req: request, res })
 
-    // Allow both ADMIN and MODERATOR roles for moderation routes
-    if (isModerationRoute) {
-      if (!['ADMIN', 'MODERATOR'].includes(token?.role || '')) {
-        return NextResponse.redirect(new URL('/', req.url));
-      }
-    }
-    // Only ADMIN role for other admin routes
-    else if (isAdminRoute && token?.role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
-    // Only SELLER role for seller routes (or ADMIN for oversight)
-    else if (isSellerRoute && !['SELLER', 'ADMIN'].includes(token?.role || '')) {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
+  // Refresh session if expired
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
+  // Protected routes that require authentication
+  const protectedPaths = [
+    '/dashboard',
+    '/orders',
+    '/seller',
+    '/messages',
+    '/liked-items',
+    '/registry'
+  ]
+
+  const isProtectedPath = protectedPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  )
+
+  if (isProtectedPath && !session) {
+    // Redirect to login if accessing protected route without session
+    const redirectUrl = new URL('/auth/signin', request.url)
+    redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
+    return NextResponse.redirect(redirectUrl)
   }
-);
 
+  // Auth page redirects
+  if (session && (
+    request.nextUrl.pathname.startsWith('/auth/signin') ||
+    request.nextUrl.pathname.startsWith('/auth/signup')
+  )) {
+    // Redirect to dashboard if already logged in
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  return res
+}
+
+// Specify which routes should trigger this middleware
 export const config = {
   matcher: [
-    '/admin/:path*',
-    '/dashboard/:path*',
-    '/seller/:path*',
-    '/api/admin/:path*',
-    '/api/seller/:path*'
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     * - api routes
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public|api).*)',
   ],
-};
+}

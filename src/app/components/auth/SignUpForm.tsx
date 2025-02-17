@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 interface FormErrors {
   firstName?: string;
@@ -109,40 +109,60 @@ export default function SignUpForm({ redirectTo }: SignUpFormProps) {
     const name = `${firstName} ${lastName}`;
 
     try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role: 'SELLER', // Set default role
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
-        body: JSON.stringify({
-          email,
-          password,
-          name,
-        }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        // Handle specific error cases
-        if (data.error === "User already exists") {
+      if (signUpError) {
+        if (signUpError.message.includes('already registered')) {
           setError("An account with this email already exists");
-        } else if (data.details?.includes("passwordless sign up")) {
+        } else if (signUpError.message.includes('passwordless')) {
           setError("This email is already registered with a different sign-in method");
         } else {
-          throw new Error(data.error || "Failed to create account");
+          setError(signUpError.message || "Failed to create account");
         }
         setIsLoading(false);
         return;
       }
 
-      // Show success message and email verification notice
-      setError(null);
-      setIsLoading(false);
-      
-      // Redirect to the specified page or verification page
-      router.push(redirectTo || "/auth/verify-email");
-      router.refresh();
+      if (data?.user) {
+        // Create seller profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: data.user.id,
+              name,
+              email,
+              role: 'SELLER',
+            },
+          ]);
+
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+          // Clean up auth user if profile creation fails
+          await supabase.auth.signOut();
+          setError("Failed to complete registration. Please try again.");
+          setIsLoading(false);
+          return;
+        }
+
+        // Show success message and email verification notice
+        setError(null);
+        setIsLoading(false);
+        
+        // Redirect to the specified page or verification page
+        router.push(redirectTo || "/auth/verify-email");
+        router.refresh();
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
       setIsLoading(false);

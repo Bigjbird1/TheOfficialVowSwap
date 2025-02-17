@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/types/supabase'
+import { NextResponse, NextRequest } from 'next/server'
 
 // Validate environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -14,12 +16,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Create a single instance of the Supabase client
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true, // Enable session persistence
-    autoRefreshToken: true, // Enable automatic token refresh
-    detectSessionInUrl: true // Enable detection of auth redirects
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'supabase.auth.token',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined
   },
-  // Add global error handler
   global: {
+    headers: {
+      'X-Client-Info': 'vowswap-marketplace',
+    },
     fetch: (...args) => {
       return fetch(...args).catch(error => {
         console.error('Supabase client error:', error)
@@ -32,6 +38,12 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // Helper to check if we're running on the server side
 export const isServer = () => typeof window === 'undefined'
 
+// Create middleware client
+export const createServerSupabase = (req: NextRequest) => {
+  const res = NextResponse.next()
+  return createMiddlewareClient({ req, res })
+}
+
 // Helper to get user session
 export const getSession = async () => {
   const { data: { session }, error } = await supabase.auth.getSession()
@@ -42,21 +54,33 @@ export const getSession = async () => {
   return session
 }
 
-// Helper to get user profile
+// Helper to get user profile with role
 export const getUserProfile = async () => {
   const session = await getSession()
   if (!session?.user?.id) return null
 
-  const { data, error } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, roles(*)')
     .eq('id', session.user.id)
     .single()
 
-  if (error) {
-    console.error('Error fetching user profile:', error.message)
+  if (profileError) {
+    console.error('Error fetching user profile:', profileError.message)
     return null
   }
 
-  return data
+  return profile
 }
+
+// Helper to sign out
+export const signOut = async () => {
+  const { error } = await supabase.auth.signOut()
+  if (error) {
+    console.error('Error signing out:', error.message)
+    throw error
+  }
+}
+
+// Types
+export type Profile = Awaited<ReturnType<typeof getUserProfile>>

@@ -1,15 +1,24 @@
-/// <reference types="jest" />
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '../test-utils';
 import userEvent from '@testing-library/user-event';
-import { signIn } from 'next-auth/react';
+import '@testing-library/jest-dom';
 import { useRouter } from 'next/navigation';
 import SignInForm from '../../src/app/components/auth/SignInForm';
+import { supabase } from '@/lib/supabase';
 
-// Mock next-auth and next/navigation
-jest.mock('next-auth/react');
+// Mock next/navigation
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
+}));
+
+// Mock Supabase client
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      signInWithPassword: jest.fn(),
+      refreshSession: jest.fn(),
+    },
+  },
 }));
 
 describe('SignInForm Component', () => {
@@ -19,8 +28,8 @@ describe('SignInForm Component', () => {
   };
 
   beforeEach(() => {
+    jest.clearAllMocks();
     (useRouter as jest.Mock).mockReturnValue(mockRouter);
-    (signIn as jest.Mock).mockReset();
   });
 
   test('renders email and password input fields', () => {
@@ -44,7 +53,16 @@ describe('SignInForm Component', () => {
   });
 
   test('handles successful sign in', async () => {
-    (signIn as jest.Mock).mockResolvedValueOnce({ error: null });
+    const mockSession = {
+      user: { email: 'test@example.com' },
+      session: { access_token: 'token' },
+    };
+
+    (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValueOnce({
+      data: mockSession,
+      error: null,
+    });
+
     render(<SignInForm />);
 
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
@@ -58,43 +76,83 @@ describe('SignInForm Component', () => {
   });
 
   test('handles failed sign in attempts and rate limiting', async () => {
-    (signIn as jest.Mock).mockResolvedValue({ error: 'Invalid credentials' });
-    render(<SignInForm />);
+    (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
+      data: null,
+      error: { message: 'Invalid credentials', status: 400 },
+    });
 
+    render(<SignInForm />);
     const signInButton = screen.getByRole('button', { name: /sign in/i });
 
     // Simulate 5 failed attempts
     for (let i = 0; i < 5; i++) {
+      await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await userEvent.type(screen.getByLabelText(/password/i), 'wrongpassword');
       await userEvent.click(signInButton);
+      
       await waitFor(() => {
         expect(screen.getByText(/attempts remaining/i)).toBeInTheDocument();
       });
+      
+      // Clear inputs for next attempt
+      await userEvent.clear(screen.getByLabelText(/email/i));
+      await userEvent.clear(screen.getByLabelText(/password/i));
     }
 
     // Verify account lockout
+    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'password123');
     await userEvent.click(signInButton);
+
     await waitFor(() => {
       expect(screen.getByText(/account locked for 15 minutes/i)).toBeInTheDocument();
     });
   });
 
   test('displays error message on network failure', async () => {
-    (signIn as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
-    render(<SignInForm />);
+    (supabase.auth.signInWithPassword as jest.Mock).mockRejectedValueOnce(
+      new Error('Network error')
+    );
 
+    render(<SignInForm />);
+    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'password123');
     await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
     await waitFor(() => {
       expect(screen.getByText(/an error occurred/i)).toBeInTheDocument();
     });
   });
 
   test('disables submit button while loading', async () => {
-    (signIn as jest.Mock).mockImplementationOnce(() => new Promise(resolve => setTimeout(resolve, 100)));
-    render(<SignInForm />);
+    (supabase.auth.signInWithPassword as jest.Mock).mockImplementationOnce(
+      () => new Promise(resolve => setTimeout(resolve, 100))
+    );
 
+    render(<SignInForm />);
     const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'password123');
     await userEvent.click(submitButton);
+
     expect(submitButton).toBeDisabled();
     expect(screen.getByText(/signing in\.\.\./i)).toBeInTheDocument();
+  });
+
+  test('handles rate limiting error from Supabase', async () => {
+    (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Too many requests', status: 429 },
+    });
+
+    render(<SignInForm />);
+    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/too many attempts/i)).toBeInTheDocument();
+    });
   });
 });

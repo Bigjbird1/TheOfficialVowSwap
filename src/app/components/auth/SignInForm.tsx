@@ -1,11 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { AuthError } from "@supabase/supabase-js";
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+const handleAuthError = (error: AuthError) => {
+  switch (error.status) {
+    case 400:
+      return "Invalid credentials";
+    case 429:
+      return "Too many attempts. Please try again later";
+    default:
+      return error.message || "An unexpected error occurred";
+  }
+};
 
 export default function SignInForm() {
   const router = useRouter();
@@ -33,13 +45,12 @@ export default function SignInForm() {
     const password = formData.get("password") as string;
 
     try {
-      const result = await signIn("credentials", {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
-        redirect: false,
       });
 
-      if (result?.error) {
+      if (signInError) {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
         
@@ -50,15 +61,20 @@ export default function SignInForm() {
           // Reset attempts after lockout
           setAttempts(0);
         } else {
-          setError(`Invalid email or password. ${MAX_ATTEMPTS - newAttempts} attempts remaining.`);
+          setError(`${handleAuthError(signInError)} ${MAX_ATTEMPTS - newAttempts} attempts remaining.`);
         }
         
         setIsLoading(false);
         return;
       }
 
-      router.push("/");
-      router.refresh();
+      // Successful login
+      if (data?.session) {
+        // Refresh the session
+        await supabase.auth.refreshSession();
+        router.push("/");
+        router.refresh();
+      }
     } catch (error) {
       setError("An error occurred. Please try again.");
       setIsLoading(false);
