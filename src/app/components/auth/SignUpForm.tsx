@@ -31,6 +31,7 @@ export default function SignUpForm({ redirectTo }: SignUpFormProps) {
   const [error, setError] = useState<string | null>(null);
   // Track loading state for submission
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   // Track individual field errors
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   // Track if form has been touched for animation
@@ -236,15 +237,22 @@ export default function SignUpForm({ redirectTo }: SignUpFormProps) {
           <input
             id="password"
             name="password"
-            type="password"
+            type={passwordVisible ? "text" : "password"}
             autoComplete="new-password"
             required
             aria-required="true"
             aria-invalid={!!fieldErrors.password}
             aria-describedby={fieldErrors.password ? "password-error" : undefined}
-            className="w-full px-4 py-3 border rounded-full bg-gray-50 placeholder-gray-500 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+            className="w-full px-4 py-3 pr-10 border rounded-full bg-gray-50 placeholder-gray-500 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
             placeholder="Create a password"
           />
+          <button 
+            type="button"
+            onClick={() => setPasswordVisible(!passwordVisible)}
+            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500"
+          >
+            {passwordVisible ? "🙈" : "👁️"}
+          </button>
           {fieldErrors.password && (
             <div id="password-error" className="text-red-500 text-sm mt-1" role="alert">
               {fieldErrors.password}

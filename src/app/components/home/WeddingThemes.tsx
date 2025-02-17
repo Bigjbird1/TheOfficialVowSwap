@@ -170,6 +170,19 @@ const themes: WeddingTheme[] = [
 export const WeddingThemes = () => {
   const [selectedTheme, setSelectedTheme] = useState<WeddingTheme | null>(null)
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && selectedTheme) {
+      setSelectedTheme(null)
+    }
+  }
+
+  // Close modal when clicking outside
+  const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      setSelectedTheme(null)
+    }
+  }
+
   return (
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -188,10 +201,14 @@ export const WeddingThemes = () => {
               <div className="relative h-64">
                 <Image
                   src={theme.image}
-                  alt={theme.name}
+                  alt={`${theme.name} wedding theme example`}
                   fill
                   className="object-cover"
                   sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    img.src = '/images/placeholder-theme.jpg';
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6">
@@ -237,14 +254,23 @@ export const WeddingThemes = () => {
 
         {/* Theme Details Modal */}
         {selectedTheme && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`theme-modal-${selectedTheme.name}`}
+            onClick={handleOutsideClick}
+            onKeyDown={handleKeyDown}
+            tabIndex={-1}
+          >
             <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900">{selectedTheme.name}</h3>
+                  <h3 id={`theme-modal-${selectedTheme.name}`} className="text-2xl font-bold text-gray-900">{selectedTheme.name}</h3>
                   <button
                     onClick={() => setSelectedTheme(null)}
                     className="text-gray-400 hover:text-gray-500"
+                    aria-label="Close modal"
                   >
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -273,12 +299,16 @@ export const WeddingThemes = () => {
                       {selectedTheme.popularItems.map((item, index) => (
                         <div key={index} className="flex items-center space-x-4 p-3 rounded-lg bg-gray-50">
                           <div className="relative w-24 h-24 rounded-lg overflow-hidden">
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              className="object-cover"
-                            />
+                      <Image
+                        src={item.image}
+                        alt={`${item.name} product example`}
+                        fill
+                        className="object-cover"
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          img.src = '/images/placeholder-product.jpg';
+                        }}
+                      />
                           </div>
                           <div className="flex-grow">
                             <h5 className="font-medium text-gray-900">{item.name}</h5>

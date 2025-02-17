@@ -6,8 +6,11 @@ const config: NextConfig = {
   images: {
     domains: [
       'localhost',
-      'vowswap.com', // Add your production domain
+      'vowswap.com',
+      'vowswapimages.supabase.co', // Supabase storage domain
     ],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
   },
   // Configure PWA
   ...withPWA({
