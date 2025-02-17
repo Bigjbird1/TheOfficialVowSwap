@@ -58,11 +58,14 @@ export default function RecentOrders() {
       setData(data);
       setError(null);
     } catch (error) {
-      console.error('Dashboard data fetch error:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        retryCount,
-        timestamp: new Date().toISOString()
-      });
+      console.error(
+        'Dashboard data fetch error:', 
+        JSON.stringify({
+          error: error instanceof Error ? error.message : 'Unknown error',
+          retryCount,
+          timestamp: new Date().toISOString()
+        }, null, 2)
+      );
 
       // Set detailed error state
       setError({

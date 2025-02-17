@@ -7,18 +7,119 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ProductQuickView from '../ProductQuickView'
 import { Product as ProductType } from '../../types'
 
+const mockProducts: ProductType[] = [
+  {
+    id: '1',
+    name: 'Vintage Vases',
+    price: 129,
+    description: 'Beautiful vintage vases for your wedding decor.',
+    category: 'Decor',
+    rating: 4,
+    reviewCount: 12,
+    stockStatus: 'In Stock',
+    images: [{ id: '1', url: '/placeholder.svg', alt: 'Vintage Vases' }],
+    specifications: {
+      material: 'Ceramic',
+      height: '10 inches',
+    },
+    shippingInfo: 'Ships within 2-3 business days',
+    sellerName: 'Vintage Finds',
+    sellerRating: 5,
+  },
+  {
+    id: '2',
+    name: 'Crystal Chandeliers',
+    price: 299,
+    description: 'Elegant crystal chandeliers to add sparkle to your event.',
+    category: 'Lighting',
+    rating: 5,
+    reviewCount: 25,
+    stockStatus: 'In Stock',
+    images: [{ id: '2', url: '/placeholder.svg', alt: 'Crystal Chandeliers' }],
+    specifications: {
+      material: 'Crystal',
+      height: '24 inches',
+    },
+    shippingInfo: 'Ships within 5-7 business days',
+    sellerName: 'Elegant Lighting',
+    sellerRating: 4,
+  },
+  {
+    id: '3',
+    name: 'Table Runners',
+    price: 49,
+    description: 'Stylish table runners to enhance your table settings.',
+    category: 'Decor',
+    rating: 4,
+    reviewCount: 8,
+    stockStatus: 'In Stock',
+    images: [{ id: '3', url: '/placeholder.svg', alt: 'Table Runners' }],
+    specifications: {
+      material: 'Linen',
+      length: '108 inches',
+    },
+    shippingInfo: 'Ships within 1-2 business days',
+    sellerName: 'Table Decor',
+    sellerRating: 4,
+  },
+  {
+    id: '4',
+    name: 'Floral Arrangements',
+    price: 199,
+    description: 'Stunning floral arrangements for a touch of elegance.',
+    category: 'Decor',
+    rating: 5,
+    reviewCount: 18,
+    stockStatus: 'In Stock',
+    images: [{ id: '4', url: '/placeholder.svg', alt: 'Floral Arrangements' }],
+    specifications: {
+      material: 'Silk Flowers',
+      height: '15 inches',
+    },
+    shippingInfo: 'Ships within 3-5 business days',
+    sellerName: 'Floral Designs',
+    sellerRating: 5,
+  },
+  {
+    id: '5',
+    name: 'LED Curtains',
+    price: 149,
+    description: 'Magical LED curtains to create a dreamy atmosphere.',
+    category: 'Lighting',
+    rating: 4,
+    reviewCount: 15,
+    stockStatus: 'In Stock',
+    images: [{ id: '5', url: '/placeholder.svg', alt: 'LED Curtains' }],
+    specifications: {
+      material: 'LED Lights',
+      length: '10 feet',
+    },
+    shippingInfo: 'Ships within 2-4 business days',
+    sellerName: 'Lighting Magic',
+    sellerRating: 4,
+  },
+  {
+    id: '6',
+    name: 'Rustic Signs',
+    price: 79,
+    description: 'Charming rustic signs to add a personal touch.',
+    category: 'Decor',
+    rating: 3,
+    reviewCount: 5,
+    stockStatus: 'In Stock',
+    images: [{ id: '6', url: '/placeholder.svg', alt: 'Rustic Signs' }],
+    specifications: {
+      material: 'Wood',
+      width: '20 inches',
+    },
+    shippingInfo: 'Ships within 1-3 business days',
+    sellerName: 'Rustic Charm',
+    sellerRating: 3,
+  },
+];
+
 const ProductCard = ({ product, onQuickViewClick }: { product: ProductType; onQuickViewClick: (product: ProductType) => void }) => {
   const [isLoading, setIsLoading] = useState(true)
-
-  // Helper function to determine if a URL is absolute
-  const isAbsoluteURL = (url: string) => {
-    try {
-      new URL(url);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
 
   return (
     <Link href={`/product/${product.id}`}>
@@ -37,12 +138,12 @@ const ProductCard = ({ product, onQuickViewClick }: { product: ProductType; onQu
 
         <div className="relative w-full" style={{ paddingBottom: '100%' }}>
           <Image
-            src={product.images?.[0]?.url ? (isAbsoluteURL(product.images[0].url) ? product.images[0].url : `/api/products/image/${product.images[0].id}`) : '/window.svg'}
+            src={product.images[0].url}
             alt={product.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
-            onLoad={() => setIsLoading(false)}
+            onLoadingComplete={() => setIsLoading(false)}
           />
         </div>
 
@@ -78,35 +179,15 @@ const ProductCard = ({ product, onQuickViewClick }: { product: ProductType; onQu
 }
 
 export const PopularProducts = () => {
-  const [products, setProducts] = useState<ProductType[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [isScrolling, setIsScrolling] = useState(false)
   const [startX, setStartX] = useState(0)
-  const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
+    const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null); // State for Quick View
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch('/api/products');
-        if (!response.ok) {
-          throw new Error('Failed to fetch products');
-        }
-        const data = await response.json();
-        setProducts(data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
 
   const filteredProducts = selectedCategory === 'All'
-    ? products
-    : products.filter((product: ProductType) => product.category === selectedCategory)
+    ? mockProducts
+    : mockProducts.filter(product => product.category === selectedCategory)
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsScrolling(true)
@@ -125,21 +206,13 @@ export const PopularProducts = () => {
     setIsScrolling(false)
   }
 
-  const handleQuickViewClick = (product: ProductType) => {
+    const handleQuickViewClick = (product: ProductType) => {
     setSelectedProduct(product);
   };
 
   const handleCloseQuickView = () => {
     setSelectedProduct(null);
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E35B96] border-t-transparent"></div>
-      </div>
-    );
-  }
 
   return (
     <section className="pt-2 pb-12 bg-white">
@@ -189,7 +262,7 @@ export const PopularProducts = () => {
           </motion.div>
         </AnimatePresence>
       </div>
-      {/* Conditionally render the Quick View modal */}
+            {/* Conditionally render the Quick View modal */}
       {selectedProduct && (
         <ProductQuickView product={selectedProduct} onClose={handleCloseQuickView} />
       )}

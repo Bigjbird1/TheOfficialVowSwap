@@ -14,21 +14,21 @@ const testimonials: Testimonial[] = [
   {
     id: "emily-james",
     name: "Emily & James",
-    image: "/window.svg",
+    image: "/placeholder.svg?height=200&width=200",
     quote: "Our wedding decor was a dream come true thanks to the unique items we found here!",
     role: "Recent Newlyweds"
   },
   {
     id: "sarah-michael",
     name: "Sarah & Michael",
-    image: "/window.svg",
+    image: "/placeholder.svg?height=200&width=200",
     quote: "A vast selection and seamless experience made our planning stress-free.",
     role: "Married June 2024"
   },
   {
     id: "anna-robert",
     name: "Anna & Robert",
-    image: "/window.svg",
+    image: "/placeholder.svg?height=200&width=200",
     quote: "The quality and variety of decor options truly elevated our wedding day.",
     role: "Married August 2024"
   },

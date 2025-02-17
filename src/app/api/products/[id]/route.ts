@@ -18,9 +18,7 @@ export async function GET(
         }
 
         const product = await prisma.product.findUnique({
-            where: {
-                id: params.id.toString() // Ensure ID is treated as string
-            },
+            where: { id: params.id },
             select: {
                 id: true,
                 name: true,
@@ -46,16 +44,7 @@ export async function GET(
         }
     } catch (error) {
         console.error('Error fetching product:', error);
-        if (error instanceof Error) {
-            return NextResponse.json({
-                message: `Error loading product: ${error.message}`,
-                details: 'Failed to fetch product data'
-            }, { status: 500 });
-        }
-        return NextResponse.json({
-            message: 'Error loading product',
-            details: 'An unexpected error occurred'
-        }, { status: 500 });
+        return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
     }
 }
 

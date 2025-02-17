@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
-import { authOptions } from '@/app/api/auth/auth.config';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import DashboardClientLayout from './client-layout';
 
 interface DashboardLayoutProps {
@@ -15,8 +15,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
     redirect('/auth/signin');
   }
 
-  // Allow both customers and sellers to access their respective dashboards
-  if (session.user.role === 'SELLER') {
+  if (session.user.role !== 'CUSTOMER') {
     redirect('/seller/dashboard');
   }
 

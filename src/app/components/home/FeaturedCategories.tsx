@@ -12,10 +12,10 @@ interface Category {
 }
 
 const categories: Category[] = [
-  { name: "Elegant Lighting", image: "/geometric-pattern.svg", count: "1,200+", slug: "elegant-lighting" },
-  { name: "Rustic Furniture", image: "/geometric-pattern.svg", count: "950+", slug: "rustic-furniture" },
-  { name: "Floral Arrangements", image: "/geometric-pattern.svg", count: "1,500+", slug: "floral-arrangements" },
-  { name: "Vintage Accessories", image: "/geometric-pattern.svg", count: "800+", slug: "vintage-accessories" },
+  { name: "Elegant Lighting", image: "/placeholder.svg?height=500&width=400", count: "1,200+", slug: "elegant-lighting" },
+  { name: "Rustic Furniture", image: "/placeholder.svg?height=500&width=400", count: "950+", slug: "rustic-furniture" },
+  { name: "Floral Arrangements", image: "/placeholder.svg?height=500&width=400", count: "1,500+", slug: "floral-arrangements" },
+  { name: "Vintage Accessories", image: "/placeholder.svg?height=500&width=400", count: "800+", slug: "vintage-accessories" },
 ]
 
 export const FeaturedCategories = () => {

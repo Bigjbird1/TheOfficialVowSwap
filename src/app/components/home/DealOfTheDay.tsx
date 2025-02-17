@@ -20,7 +20,7 @@ const dealProduct: DealProduct = {
   description: "Transform your venue with this stunning crystal chandelier. Perfect for creating an elegant atmosphere for your special day.",
   originalPrice: 599.99,
   salePrice: 399.99,
-  image: "/window.svg",
+  image: "/placeholder.svg?height=600&width=600",
   endTime: "2025-02-09T23:59:59" // 24 hours from now
 }
 

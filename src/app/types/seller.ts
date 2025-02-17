@@ -112,6 +112,7 @@ export type SalesMetrics = {
   weekly: number;
   monthly: number;
   total: number;
+  byCategory: { [key: string]: number };
 };
 
 export type SellerStats = {
