@@ -1,12 +1,12 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import prisma from "./prisma"
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/auth.config';
+import prisma from './prisma';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 type ApiResponse = {
@@ -24,20 +24,20 @@ export async function validateSellerAccess(): Promise<ApiResponse> {
       return {
         success: false,
         message: 'Unauthorized',
-        error: 'No session found'
+        error: 'No session found',
       };
     }
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { seller: true }
+      include: { seller: true },
     });
 
     if (!user) {
       return {
         success: false,
         message: 'User not found',
-        error: 'Invalid user'
+        error: 'Invalid user',
       };
     }
 
@@ -46,7 +46,7 @@ export async function validateSellerAccess(): Promise<ApiResponse> {
       return {
         success: false,
         message: 'Unauthorized',
-        error: 'Invalid role'
+        error: 'Invalid role',
       };
     }
 
@@ -54,7 +54,7 @@ export async function validateSellerAccess(): Promise<ApiResponse> {
       return {
         success: false,
         message: 'Seller account not found',
-        error: 'No seller profile'
+        error: 'No seller profile',
       };
     }
 
@@ -62,15 +62,15 @@ export async function validateSellerAccess(): Promise<ApiResponse> {
       success: true,
       data: {
         user,
-        seller: user.seller
-      }
+        seller: user.seller,
+      },
     };
   } catch (error) {
     console.error('Seller validation error:', error);
     return {
       success: false,
       message: 'Internal server error',
-      error
+      error,
     };
   }
 }
@@ -87,11 +87,8 @@ export function createApiResponse(
       { status: status || 500 }
     );
   }
-  
-  return NextResponse.json(
-    { success: true, data, message },
-    { status }
-  );
+
+  return NextResponse.json({ success: true, data, message }, { status });
 }
 
 export async function getSellerDetails(userId: string) {

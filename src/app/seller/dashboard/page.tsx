@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/auth.config';
 import DashboardStats from '@/app/components/seller/DashboardStats';
 import RecentOrders from '@/app/components/seller/RecentOrders';
 import ProductManagement from '@/app/components/seller/ProductManagement';
