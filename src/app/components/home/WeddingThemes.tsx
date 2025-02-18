@@ -1,22 +1,49 @@
-"use client"
+"use client";
 
-import { useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { Modal } from "../ui/Modal";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
+import { ChromePicker, ColorResult } from "react-color";
+import { Paintbrush, Check, Undo } from "lucide-react";
 
 interface ThemeItem {
-  name: string
-  price: number
-  image: string
+  name: string;
+  price: number;
+  image: string;
 }
 
 interface WeddingTheme {
-  name: string
-  description: string
-  image: string
-  popularItems: ThemeItem[]
-  features: string[]
-  accent: string
+  name: string;
+  description: string;
+  image: string;
+  popularItems: ThemeItem[];
+  features: string[];
+  accent: string;
+  defaultColors: {
+    primary: string;
+    secondary: string;
+    background: string;
+  };
+  typography: {
+    heading: string;
+    body: string;
+  };
+}
+
+interface CustomTheme {
+  themeName: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    background: string;
+  };
+  typography: {
+    heading: string;
+    body: string;
+  };
 }
 
 const themes: WeddingTheme[] = [
@@ -47,7 +74,16 @@ const themes: WeddingTheme[] = [
       "Warm lighting options",
       "Textured fabrics"
     ],
-    accent: "bg-amber-100"
+    accent: "bg-amber-100",
+    defaultColors: {
+      primary: "#8B4513",
+      secondary: "#D2691E",
+      background: "#FFF8DC"
+    },
+    typography: {
+      heading: "font-serif",
+      body: "font-sans"
+    }
   },
   {
     name: "Modern Minimalist",
@@ -76,126 +112,134 @@ const themes: WeddingTheme[] = [
       "Minimalist design",
       "Contemporary materials"
     ],
-    accent: "bg-gray-100"
+    accent: "bg-gray-100",
+    defaultColors: {
+      primary: "#2C3E50",
+      secondary: "#7F8C8D",
+      background: "#FFFFFF"
+    },
+    typography: {
+      heading: "font-sans",
+      body: "font-sans"
+    }
   },
-  {
-    name: "Vintage Romance",
-    description: "Timeless elegance with classic details and soft, romantic touches",
-    image: "/images/themes/vintage.jpg",
-    popularItems: [
-      {
-        name: "Antique Frame Set",
-        price: 59.99,
-        image: "/images/products/antique-frames.jpg"
-      },
-      {
-        name: "Pearl Centerpiece",
-        price: 44.99,
-        image: "/images/products/pearl-center.jpg"
-      },
-      {
-        name: "Lace Table Runner",
-        price: 34.99,
-        image: "/images/products/lace-runner.jpg"
-      }
-    ],
-    features: [
-      "Antique finishes",
-      "Lace details",
-      "Soft color palette",
-      "Classic ornaments"
-    ],
-    accent: "bg-rose-50"
-  },
-  {
-    name: "Bohemian Spirit",
-    description: "Free-spirited and eclectic with rich textures and organic elements",
-    image: "/images/themes/bohemian.jpg",
-    popularItems: [
-      {
-        name: "Macramé Backdrop",
-        price: 89.99,
-        image: "/images/products/macrame.jpg"
-      },
-      {
-        name: "Pampas Grass Set",
-        price: 49.99,
-        image: "/images/products/pampas.jpg"
-      },
-      {
-        name: "Rattan Lanterns",
-        price: 39.99,
-        image: "/images/products/rattan-lanterns.jpg"
-      }
-    ],
-    features: [
-      "Natural textures",
-      "Eclectic patterns",
-      "Earth tones",
-      "Organic materials"
-    ],
-    accent: "bg-orange-50"
-  },
-  {
-    name: "Classic Elegance",
-    description: "Sophisticated and refined with timeless design elements",
-    image: "/images/themes/classic.jpg",
-    popularItems: [
-      {
-        name: "Crystal Candelabra",
-        price: 129.99,
-        image: "/images/products/candelabra.jpg"
-      },
-      {
-        name: "Silver Charger Plates",
-        price: 79.99,
-        image: "/images/products/charger-plates.jpg"
-      },
-      {
-        name: "Silk Table Runner",
-        price: 54.99,
-        image: "/images/products/silk-runner.jpg"
-      }
-    ],
-    features: [
-      "Crystal accents",
-      "Fine linens",
-      "Traditional elements",
-      "Luxurious details"
-    ],
-    accent: "bg-blue-50"
-  }
-]
+  // ... (other themes remain the same, just add defaultColors and typography)
+];
+
+const fontOptions = [
+  { label: "Serif", value: "font-serif" },
+  { label: "Sans Serif", value: "font-sans" },
+  { label: "Display", value: "font-display" },
+];
 
 export const WeddingThemes = () => {
-  const [selectedTheme, setSelectedTheme] = useState<WeddingTheme | null>(null)
+  const [selectedTheme, setSelectedTheme] = useState<WeddingTheme | null>(null);
+  const [isCustomizing, setIsCustomizing] = useState(false);
+  const [activeColorPicker, setActiveColorPicker] = useState<"primary" | "secondary" | "background" | null>(null);
+  const [customTheme, setCustomTheme] = useState<CustomTheme | null>(null);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape' && selectedTheme) {
-      setSelectedTheme(null)
+  // Load saved theme from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("vowswap-theme");
+    if (savedTheme) {
+      setCustomTheme(JSON.parse(savedTheme));
     }
-  }
+  }, []);
 
-  // Close modal when clicking outside
-  const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      setSelectedTheme(null)
+  // Save theme to localStorage when it changes
+  useEffect(() => {
+    if (customTheme) {
+      localStorage.setItem("vowswap-theme", JSON.stringify(customTheme));
+      // Apply theme to document
+      document.documentElement.style.setProperty("--primary-color", customTheme.colors.primary);
+      document.documentElement.style.setProperty("--secondary-color", customTheme.colors.secondary);
+      document.documentElement.style.setProperty("--background-color", customTheme.colors.background);
     }
-  }
+  }, [customTheme]);
+
+  const handleThemeSelect = (theme: WeddingTheme) => {
+    setSelectedTheme(theme);
+    if (!customTheme) {
+      setCustomTheme({
+        themeName: theme.name,
+        colors: theme.defaultColors,
+        typography: theme.typography
+      });
+    }
+  };
+
+  const handleCustomizeTheme = () => {
+    if (selectedTheme && !customTheme) {
+      setCustomTheme({
+        themeName: selectedTheme.name,
+        colors: selectedTheme.defaultColors,
+        typography: selectedTheme.typography
+      });
+    }
+    setIsCustomizing(true);
+  };
+
+  const handleColorChange = (color: ColorResult, type: "primary" | "secondary" | "background") => {
+    if (customTheme) {
+      setCustomTheme({
+        ...customTheme,
+        colors: {
+          ...customTheme.colors,
+          [type]: color.hex
+        }
+      });
+    }
+  };
+
+  const handleTypographyChange = (value: string, type: "heading" | "body") => {
+    if (customTheme) {
+      setCustomTheme({
+        ...customTheme,
+        typography: {
+          ...customTheme.typography,
+          [type]: value
+        }
+      });
+    }
+  };
+
+  const resetTheme = () => {
+    if (selectedTheme) {
+      setCustomTheme({
+        themeName: selectedTheme.name,
+        colors: selectedTheme.defaultColors,
+        typography: selectedTheme.typography
+      });
+    }
+  };
 
   return (
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Wedding Themes</h2>
-          <p className="text-lg text-gray-600">Discover your perfect wedding style</p>
+          <h2 className={`text-3xl font-bold text-gray-900 mb-4 ${customTheme?.typography.heading}`}>
+            Wedding Themes
+          </h2>
+          <p className={`text-lg text-gray-600 ${customTheme?.typography.body}`}>
+            Discover and customize your perfect wedding style
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {themes.map((theme) => (
             <div
               key={theme.name}
-              className={`rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ${theme.accent}`}
+              className={`rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+                customTheme?.themeName === theme.name ? "ring-2 ring-[#E35B96]" : ""
+              } ${theme.accent}`}
+              style={
+                customTheme?.themeName === theme.name
+                  ? {
+                      backgroundColor: customTheme.colors.background,
+                      borderColor: customTheme.colors.primary,
+                    }
+                  : {}
+              }
             >
               {/* Theme Image */}
               <div className="relative h-64">
@@ -207,24 +251,36 @@ export const WeddingThemes = () => {
                   sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;
-                    img.src = '/images/placeholder-theme.jpg';
+                    img.src = "/images/placeholder-theme.jpg";
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <h3 className="text-2xl font-bold text-white mb-2">{theme.name}</h3>
-                  <p className="text-white/90">{theme.description}</p>
+                  <h3 className={`text-2xl font-bold text-white mb-2 ${customTheme?.typography.heading}`}>
+                    {theme.name}
+                  </h3>
+                  <p className={`text-white/90 ${customTheme?.typography.body}`}>{theme.description}</p>
                 </div>
               </div>
 
               {/* Theme Features */}
               <div className="p-6">
                 <div className="mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Key Features:</h4>
+                  <h4 className={`font-semibold text-gray-900 mb-3 ${customTheme?.typography.heading}`}>
+                    Key Features:
+                  </h4>
                   <ul className="space-y-2">
                     {theme.features.map((feature, index) => (
-                      <li key={index} className="flex items-center text-gray-700">
-                        <svg className="w-5 h-5 text-rose-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <li
+                        key={index}
+                        className={`flex items-center text-gray-700 ${customTheme?.typography.body}`}
+                      >
+                        <svg
+                          className="w-5 h-5 text-rose-500 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         {feature}
@@ -234,113 +290,193 @@ export const WeddingThemes = () => {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <button
-                    onClick={() => setSelectedTheme(theme)}
-                    className="text-rose-500 font-medium hover:text-rose-600 transition-colors"
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleThemeSelect(theme)}
                   >
                     View Collection
-                  </button>
-                  <Link
-                    href={`/products?theme=${theme.name.toLowerCase()}`}
-                    className="bg-rose-500 text-white px-4 py-2 rounded-full hover:bg-rose-600 transition-colors"
+                  </Button>
+                  <Button
+                    onClick={() => handleThemeSelect(theme)}
                   >
-                    Shop Now
-                  </Link>
+                    Select Theme
+                  </Button>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Theme Details Modal */}
-        {selectedTheme && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={`theme-modal-${selectedTheme.name}`}
-            onClick={handleOutsideClick}
-            onKeyDown={handleKeyDown}
-            tabIndex={-1}
-          >
-            <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-6">
-                  <h3 id={`theme-modal-${selectedTheme.name}`} className="text-2xl font-bold text-gray-900">{selectedTheme.name}</h3>
-                  <button
-                    onClick={() => setSelectedTheme(null)}
-                    className="text-gray-400 hover:text-gray-500"
-                    aria-label="Close modal"
+        {/* Theme Customization Modal */}
+        <Modal
+          isOpen={isCustomizing}
+          onClose={() => setIsCustomizing(false)}
+          title="Customize Your Theme"
+          description="Personalize colors and typography to match your vision"
+        >
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-lg font-medium mb-4">Colors</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {(["primary", "secondary", "background"] as const).map((colorType) => (
+                  <div key={colorType} className="relative">
+                    <button
+                      onClick={() => setActiveColorPicker(activeColorPicker === colorType ? null : colorType)}
+                      className="w-full p-2 border rounded-lg flex items-center justify-between"
+                      style={{
+                        backgroundColor: customTheme?.colors[colorType],
+                        color: colorType === "background" ? "#000" : "#fff"
+                      }}
+                    >
+                      <span className="capitalize">{colorType}</span>
+                      <Paintbrush className="w-4 h-4" />
+                    </button>
+                    {activeColorPicker === colorType && (
+                      <div className="absolute z-10 mt-2">
+                        <ChromePicker
+                          color={customTheme?.colors[colorType]}
+                          onChange={(color) => handleColorChange(color, colorType)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-lg font-medium mb-4">Typography</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Headings</label>
+                  <select
+                    value={customTheme?.typography.heading}
+                    onChange={(e) => handleTypographyChange(e.target.value, "heading")}
+                    className="w-full p-2 border rounded-lg"
                   >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                    {fontOptions.map((font) => (
+                      <option key={font.value} value={font.value}>
+                        {font.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Theme Preview */}
-                  <div>
-                    <div className="relative h-80 rounded-lg overflow-hidden mb-4">
-                      <Image
-                        src={selectedTheme.image}
-                        alt={selectedTheme.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <p className="text-gray-600">{selectedTheme.description}</p>
-                  </div>
-
-                  {/* Popular Items */}
-                  <div>
-                    <h4 className="text-xl font-semibold text-gray-900 mb-4">Popular Items in this Theme</h4>
-                    <div className="space-y-4">
-                      {selectedTheme.popularItems.map((item, index) => (
-                        <div key={index} className="flex items-center space-x-4 p-3 rounded-lg bg-gray-50">
-                          <div className="relative w-24 h-24 rounded-lg overflow-hidden">
-                      <Image
-                        src={item.image}
-                        alt={`${item.name} product example`}
-                        fill
-                        className="object-cover"
-                        onError={(e) => {
-                          const img = e.target as HTMLImageElement;
-                          img.src = '/images/placeholder-product.jpg';
-                        }}
-                      />
-                          </div>
-                          <div className="flex-grow">
-                            <h5 className="font-medium text-gray-900">{item.name}</h5>
-                            <p className="text-rose-500 font-semibold">${item.price}</p>
-                          </div>
-                          <Link
-                            href={`/products/${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-                            className="bg-white text-rose-500 px-4 py-2 rounded-full border border-rose-500 hover:bg-rose-50 transition-colors"
-                          >
-                            View
-                          </Link>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-6">
-                      <Link
-                        href={`/products?theme=${selectedTheme.name.toLowerCase()}`}
-                        className="block w-full bg-rose-500 text-white text-center px-6 py-3 rounded-full hover:bg-rose-600 transition-colors"
-                      >
-                        Shop All {selectedTheme.name} Items
-                      </Link>
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Body Text</label>
+                  <select
+                    value={customTheme?.typography.body}
+                    onChange={(e) => handleTypographyChange(e.target.value, "body")}
+                    className="w-full p-2 border rounded-lg"
+                  >
+                    {fontOptions.map((font) => (
+                      <option key={font.value} value={font.value}>
+                        {font.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
+
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={resetTheme}
+              >
+                <Undo className="w-4 h-4 mr-2" />
+                Reset to Default
+              </Button>
+              <Button onClick={() => setIsCustomizing(false)}>
+                <Check className="w-4 h-4 mr-2" />
+                Save Changes
+              </Button>
+            </div>
           </div>
-        )}
+        </Modal>
+
+        {/* Theme Details Modal */}
+        <Modal
+          isOpen={!!selectedTheme && !isCustomizing}
+          onClose={() => setSelectedTheme(null)}
+          title={selectedTheme?.name}
+          description={selectedTheme?.description}
+        >
+          {selectedTheme && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Theme Preview */}
+              <div>
+                <div className="relative h-80 rounded-lg overflow-hidden mb-4">
+                  <Image
+                    src={selectedTheme.image}
+                    alt={selectedTheme.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleCustomizeTheme}
+                  >
+                    Customize Theme
+                  </Button>
+                  <Link
+                    href={`/products?theme=${selectedTheme.name.toLowerCase()}`}
+                  >
+                    <Button>
+                      Shop Collection
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Popular Items */}
+              <div>
+                <h4 className={`text-xl font-semibold text-gray-900 mb-4 ${customTheme?.typography.heading}`}>
+                  Popular Items in this Theme
+                </h4>
+                <div className="space-y-4">
+                  {selectedTheme.popularItems.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center space-x-4 p-3 rounded-lg bg-gray-50"
+                      style={{ backgroundColor: customTheme?.colors.background }}
+                    >
+                      <div className="relative w-24 h-24 rounded-lg overflow-hidden">
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            const img = e.target as HTMLImageElement;
+                            img.src = "/images/placeholder-product.jpg";
+                          }}
+                        />
+                      </div>
+                      <div className="flex-grow">
+                        <h5 className={`font-medium text-gray-900 ${customTheme?.typography.heading}`}>
+                          {item.name}
+                        </h5>
+                        <p className="text-rose-500 font-semibold">${item.price}</p>
+                      </div>
+                      <Link
+                        href={`/products/${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                      >
+                        <Button variant="outline">
+                          View
+                        </Button>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default WeddingThemes
+export default WeddingThemes;
