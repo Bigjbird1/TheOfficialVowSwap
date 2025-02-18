@@ -134,9 +134,9 @@ export default function SignUpForm({ redirectTo }: SignUpFormProps) {
       }
 
       if (data?.user) {
-        // Create seller profile
-        const { error: profileError } = await supabase
-          .from('profiles')
+        // Create user in the database
+        const { error: dbError } = await supabase
+          .from('User')
           .insert([
             {
               id: data.user.id,
@@ -146,9 +146,9 @@ export default function SignUpForm({ redirectTo }: SignUpFormProps) {
             },
           ]);
 
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          // Clean up auth user if profile creation fails
+        if (dbError) {
+          console.error('Error creating user:', dbError);
+          // Clean up auth user if database creation fails
           await supabase.auth.signOut();
           setError("Failed to complete registration. Please try again.");
           setIsLoading(false);
