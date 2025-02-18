@@ -20,11 +20,15 @@ export interface FilterCategory {
 }
 
 export interface FilterBarFilters {
-  category?: string;
-  price?: string;
-  size?: string;
-  color?: string;
-  condition?: string;
+  categories?: string[];
+  price?: [number, number];
+  sizes?: string[];
+  colors?: string[];
+  conditions?: string[];
+  themes?: string[];
+  sellerTypes?: string[];
+  ratings?: string[];
+  sortBy?: string;
 }
 
 const FILTER_CATEGORIES: FilterCategory[] = [
@@ -37,6 +41,21 @@ const FILTER_CATEGORIES: FilterCategory[] = [
       { id: 'tableware', label: 'Tableware' },
       { id: 'apparel', label: 'Apparel' },
       { id: 'jewelry', label: 'Jewelry' },
+      { id: 'accessories', label: 'Accessories' },
+      { id: 'stationery', label: 'Stationery' },
+    ],
+  },
+  {
+    name: 'Theme',
+    options: [
+      { id: 'classic', label: 'Classic' },
+      { id: 'rustic', label: 'Rustic' },
+      { id: 'modern', label: 'Modern' },
+      { id: 'bohemian', label: 'Bohemian' },
+      { id: 'beach', label: 'Beach' },
+      { id: 'vintage', label: 'Vintage' },
+      { id: 'garden', label: 'Garden' },
+      { id: 'minimalist', label: 'Minimalist' },
     ],
   },
   {
@@ -57,6 +76,10 @@ const FILTER_CATEGORIES: FilterCategory[] = [
       { id: 'silver', label: 'Silver' },
       { id: 'rose-gold', label: 'Rose Gold' },
       { id: 'black', label: 'Black' },
+      { id: 'blush', label: 'Blush' },
+      { id: 'burgundy', label: 'Burgundy' },
+      { id: 'sage', label: 'Sage' },
+      { id: 'navy', label: 'Navy' },
     ],
   },
   {
@@ -68,6 +91,31 @@ const FILTER_CATEGORIES: FilterCategory[] = [
       { id: 'fair', label: 'Fair' },
     ],
   },
+  {
+    name: 'Seller Type',
+    options: [
+      { id: 'verified', label: 'Verified Seller' },
+      { id: 'top-rated', label: 'Top Rated' },
+      { id: 'professional', label: 'Professional' },
+      { id: 'individual', label: 'Individual' },
+    ],
+  },
+  {
+    name: 'Rating',
+    options: [
+      { id: '4-up', label: '4★ & Up' },
+      { id: '3-up', label: '3★ & Up' },
+      { id: '2-up', label: '2★ & Up' },
+    ],
+  },
+];
+
+const SORT_OPTIONS = [
+  { id: 'popular', label: 'Most Popular' },
+  { id: 'newest', label: 'Newest Arrivals' },
+  { id: 'price-asc', label: 'Price: Low to High' },
+  { id: 'price-desc', label: 'Price: High to Low' },
+  { id: 'rating-desc', label: 'Highest Rated' },
 ];
 
 interface FilterBarProps {
@@ -77,7 +125,9 @@ interface FilterBarProps {
 }
 
 export default function FilterBar({ onFilterChange, onSortChange, isLoading = false }: FilterBarProps) {
-  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [activeSort, setActiveSort] = useState<string>('popular');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
 
@@ -93,12 +143,38 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
   const handleFilterClick = (categoryName: string, optionId: string) => {
     setActiveFilters(prev => {
       const newFilters = { ...prev };
-      if (newFilters[categoryName] === optionId) {
-        delete newFilters[categoryName];
+      if (!newFilters[categoryName]) {
+        newFilters[categoryName] = [optionId];
+      } else if (newFilters[categoryName].includes(optionId)) {
+        newFilters[categoryName] = newFilters[categoryName].filter(id => id !== optionId);
+        if (newFilters[categoryName].length === 0) {
+          delete newFilters[categoryName];
+        }
       } else {
-        newFilters[categoryName] = optionId;
+        newFilters[categoryName] = [...newFilters[categoryName], optionId];
       }
       return newFilters;
+    });
+
+    // Notify parent of filter changes
+    onFilterChange?.({
+      ...activeFilters,
+      price: priceRange,
+      sortBy: activeSort
+    });
+  };
+
+  const handleSortChange = (sortOption: string) => {
+    setActiveSort(sortOption);
+    onSortChange?.(sortOption);
+  };
+
+  const handlePriceRangeChange = (values: number[]) => {
+    setPriceRange([values[0], values[1]]);
+    onFilterChange?.({
+      ...activeFilters,
+      price: [values[0], values[1]],
+      sortBy: activeSort
     });
   };
 
@@ -139,15 +215,38 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
 
           {/* Desktop Filter Dropdowns */}
           <div className="hidden md:flex items-center gap-4 pb-4">
+            {/* Sort Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="min-w-[160px] px-4 py-2.5 bg-white border border-rose-100 rounded-full text-sm font-medium text-rose-900 hover:bg-rose-50/50 focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all duration-200">
+                <div className="flex items-center justify-between gap-2">
+                  <span>{SORT_OPTIONS.find(opt => opt.id === activeSort)?.label || 'Sort By'}</span>
+                  <ChevronDown className="w-4 h-4 text-rose-500/80" />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg">
+                {SORT_OPTIONS.map(option => (
+                  <DropdownMenuItem
+                    key={option.id}
+                    selected={activeSort === option.id}
+                    onClick={() => handleSortChange(option.id)}
+                    className="data-[selected]:bg-rose-50 data-[selected]:text-rose-900 hover:bg-rose-50/50 transition-colors duration-200"
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {FILTER_CATEGORIES.map(category => (
               <DropdownMenu key={category.name}>
                 <DropdownMenuTrigger className={`min-w-[140px] px-4 py-2.5 bg-white border border-rose-100 rounded-full text-sm font-medium text-rose-900 hover:bg-rose-50/50 focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all duration-200 ${
-              activeFilters[category.name] ? 'bg-rose-100' : ''
-            }`}>
+                  activeFilters[category.name]?.length ? 'bg-rose-100' : ''
+                }`}>
                   <div className="flex items-center justify-between gap-2">
-                    <span>{activeFilters[category.name] 
-                      ? FILTER_CATEGORIES.find(c => c.name === category.name)?.options.find(o => o.id === activeFilters[category.name])?.label 
-                      : category.name}
+                    <span>
+                      {activeFilters[category.name]?.length
+                        ? `${category.name} (${activeFilters[category.name].length})`
+                        : category.name}
                     </span>
                     <ChevronDown className="w-4 h-4 text-rose-500/80" />
                   </div>
@@ -156,11 +255,24 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
                   {category.options.map(option => (
                     <DropdownMenuItem
                       key={option.id}
-                      selected={activeFilters[category.name] === option.id}
+                      selected={activeFilters[category.name]?.includes(option.id)}
                       onClick={() => handleFilterClick(category.name, option.id)}
                       className="data-[selected]:bg-rose-50 data-[selected]:text-rose-900 hover:bg-rose-50/50 transition-colors duration-200"
                     >
-                      {option.label}
+                      <div className="flex items-center gap-2">
+                        <div className={`w-4 h-4 border rounded ${
+                          activeFilters[category.name]?.includes(option.id)
+                            ? 'bg-rose-500 border-rose-500'
+                            : 'border-gray-300'
+                        }`}>
+                          {activeFilters[category.name]?.includes(option.id) && (
+                            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24">
+                              <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                            </svg>
+                          )}
+                        </div>
+                        {option.label}
+                      </div>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -178,6 +290,7 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
             )}
           </div>
         </div>
+
         {/* Mobile Filters Drawer */}
         <AnimatePresence>
           {showMobileFilters && (
@@ -204,7 +317,7 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
                           onClick={() => handleFilterClick(category.name, option.id)}
                           className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
                                     transition-all duration-200 ${
-                            activeFilters[category.name] === option.id
+                            activeFilters[category.name]?.includes(option.id)
                               ? 'bg-rose-100 text-rose-900 shadow-sm'
                               : 'bg-white border border-rose-100 text-rose-900 hover:bg-rose-50/50'
                           }`}
@@ -218,14 +331,16 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
                 
                 {/* Price Range Slider */}
                 <div>
-                  <h4 className="text-sm font-medium text-rose-900 mb-3">Price Range</h4>
+                  <h4 className="text-sm font-medium text-rose-900 mb-3">
+                    Price Range (${priceRange[0]} - ${priceRange[1]})
+                  </h4>
                   <div className="px-4">
                     <Range
                       step={10}
                       min={0}
                       max={1000}
-                      values={[0, 1000]}
-                      onChange={(values) => console.log(values)}
+                      values={priceRange}
+                      onChange={handlePriceRangeChange}
                       renderTrack={({ props, children }) => (
                         <div
                           {...props}
@@ -260,23 +375,27 @@ export default function FilterBar({ onFilterChange, onSortChange, isLoading = fa
           >
             <div className="max-w-7xl mx-auto px-4 py-2 flex items-center gap-4">
               <div className="flex flex-wrap gap-2">
-                {Object.entries(activeFilters).map(([category, optionId]) => {
+                {Object.entries(activeFilters).flatMap(([category, optionIds]) => {
                   const categoryData = FILTER_CATEGORIES.find(c => c.name === category);
-                  const option = categoryData?.options.find(o => o.id === optionId);
-                  if (!option) return null;
+                  if (!categoryData) return [];
                   
-                  return (
-                    <motion.button
-                      key={`${category}-${optionId}`}
-                      onClick={() => handleFilterClick(category, optionId)}
-                      className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors duration-200"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      {option.label}
-                      <X className="w-4 h-4 ml-1" />
-                    </motion.button>
-                  );
+                  return optionIds.map(optionId => {
+                    const option = categoryData.options.find(o => o.id === optionId);
+                    if (!option) return null;
+                    
+                    return (
+                      <motion.button
+                        key={`${category}-${optionId}`}
+                        onClick={() => handleFilterClick(category, optionId)}
+                        className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors duration-200"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {`${categoryData.name}: ${option.label}`}
+                        <X className="w-4 h-4 ml-1" />
+                      </motion.button>
+                    );
+                  }).filter(Boolean);
                 })}
                 <motion.button
                   onClick={clearAllFilters}

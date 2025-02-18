@@ -23,6 +23,11 @@ export interface Review {
   helpfulCount: number
   reportCount: number
   replies: ReviewReply[]
+  images?: {
+    id: string
+    url: string
+    alt?: string
+  }[]
 }
 
 export interface ReviewReply {
