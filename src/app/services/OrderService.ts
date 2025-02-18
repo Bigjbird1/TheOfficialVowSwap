@@ -23,10 +23,12 @@ export interface OrderItem {
   image: string;
 }
 
+export type OrderStatus = 'placed' | 'confirmed' | 'shipped' | 'delivered';
+
 export interface Order {
   id: string;
   date: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered';
+  status: OrderStatus;
   items: OrderItem[];
   subtotal: number;
   shipping: number;
@@ -131,6 +133,16 @@ class OrderService {
       return await response.json();
     } catch (error) {
       console.error('Error fetching orders:', error);
+      throw error;
+    }
+  }
+
+  async getOrderStatus(orderId: string): Promise<OrderStatus> {
+    try {
+      const order = await this.getOrder(orderId);
+      return order.status;
+    } catch (error) {
+      console.error('Error fetching order status:', error);
       throw error;
     }
   }

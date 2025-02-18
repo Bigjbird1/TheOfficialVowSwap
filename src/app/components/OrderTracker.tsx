@@ -1,150 +1,185 @@
-import React, { useState } from 'react';
-import { Package, Truck, Check, AlertCircle } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+"use client"
 
-const OrderStatus = {
-  PROCESSING: 'processing',
-  SHIPPED: 'shipped',
-  DELIVERED: 'delivered',
-  ISSUE: 'issue'
-} as const;
+import { useState, useEffect } from "react"
+import { Package, CheckCircle, Truck, MapPin, Clock } from "lucide-react"
+import { orderService, OrderStatus } from "../services/OrderService"
 
-type OrderStatusType = typeof OrderStatus[keyof typeof OrderStatus];
-
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price: string;
+interface OrderTrackerProps {
+  orderId: string
+  initialStatus?: OrderStatus
+  estimatedDelivery?: string
 }
 
-interface Order {
-  id: string;
-  date: string;
-  status: OrderStatusType;
-  items: OrderItem[];
-  total: string;
-  trackingNumber: string;
-  estimatedDelivery: string;
+interface StatusStep {
+  status: OrderStatus
+  label: string
+  icon: React.ReactNode
+  description: string
 }
 
-const OrderTracker = () => {
-  // Sample order data - in production, this would come from an API
-  const [orders] = useState<Order[]>([
+export default function OrderTracker({
+  orderId,
+  initialStatus = "placed",
+  estimatedDelivery,
+}: OrderTrackerProps) {
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(initialStatus)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const statusSteps: StatusStep[] = [
     {
-      id: 'WDM-2024-001',
-      date: '2024-02-01',
-      status: OrderStatus.DELIVERED,
-      items: [
-        { name: 'Crystal Chandelier', quantity: 1, price: '$299' },
-        { name: 'Table Runners', quantity: 10, price: '$149' }
-      ],
-      total: '$448',
-      trackingNumber: 'TRK123456789',
-      estimatedDelivery: '2024-02-05'
+      status: "placed",
+      label: "Order Placed",
+      icon: <Package className="w-6 h-6" />,
+      description: "Your order has been received",
     },
     {
-      id: 'WDM-2024-002',
-      date: '2024-02-03',
-      status: OrderStatus.SHIPPED,
-      items: [
-        { name: 'Rustic Wooden Arch', quantity: 1, price: '$499' }
-      ],
-      total: '$499',
-      trackingNumber: 'TRK987654321',
-      estimatedDelivery: '2024-02-08'
-    }
-  ]);
+      status: "confirmed",
+      label: "Payment Confirmed",
+      icon: <CheckCircle className="w-6 h-6" />,
+      description: "Payment has been processed successfully",
+    },
+    {
+      status: "shipped",
+      label: "Order Shipped",
+      icon: <Truck className="w-6 h-6" />,
+      description: "Your order is on its way",
+    },
+    {
+      status: "delivered",
+      label: "Delivered",
+      icon: <MapPin className="w-6 h-6" />,
+      description: "Package has been delivered",
+    },
+  ]
 
-  const getStatusIcon = (status: OrderStatusType) => {
-    switch (status) {
-      case OrderStatus.PROCESSING:
-        return <Package className="w-6 h-6 text-blue-500" />;
-      case OrderStatus.SHIPPED:
-        return <Truck className="w-6 h-6 text-purple-500" />;
-      case OrderStatus.DELIVERED:
-        return <Check className="w-6 h-6 text-green-500" />;
-      case OrderStatus.ISSUE:
-        return <AlertCircle className="w-6 h-6 text-red-500" />;
-      default:
-        return null;
-    }
-  };
+  const statusIndex = statusSteps.findIndex((step) => step.status === currentStatus)
 
-  const getStatusText = (status: OrderStatusType) => {
-    switch (status) {
-      case OrderStatus.PROCESSING:
-        return 'Processing';
-      case OrderStatus.SHIPPED:
-        return 'Shipped';
-      case OrderStatus.DELIVERED:
-        return 'Delivered';
-      case OrderStatus.ISSUE:
-        return 'Issue Reported';
-      default:
-        return '';
+  useEffect(() => {
+    const fetchOrderStatus = async () => {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const status = await orderService.getOrderStatus(orderId)
+        setCurrentStatus(status as OrderStatus)
+      } catch (error) {
+        setError("Failed to fetch order status")
+        console.error("Error fetching order status:", error)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  };
+
+    // Initial fetch
+    fetchOrderStatus()
+
+    // Poll for updates every 30 seconds
+    const intervalId = setInterval(fetchOrderStatus, 30000)
+
+    return () => clearInterval(intervalId)
+  }, [orderId])
 
   return (
-    <div className="max-w-7xl mx-auto px-8 py-12">
-      <h1 className="text-3xl font-bold mb-8">My Orders</h1>
-      
-      <div className="space-y-6">
-        {orders.map((order) => (
-          <Card key={order.id} className="overflow-hidden">
-            <CardHeader className="bg-gray-50">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">
-                  Order #{order.id}
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(order.status)}
-                  <span className="font-medium">{getStatusText(order.status)}</span>
+    <div className="max-w-3xl mx-auto p-6">
+      {/* Header with Estimated Delivery */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold mb-2">Track Your Order</h2>
+        {estimatedDelivery && (
+          <div className="flex items-center gap-2 text-gray-600">
+            <Clock className="w-5 h-5" />
+            <span>Estimated Delivery: {estimatedDelivery}</span>
+          </div>
+        )}
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Status Steps */}
+      <div className="relative">
+        {/* Progress Line */}
+        <div className="absolute left-[45px] top-0 h-full w-0.5 bg-gray-200">
+          <div
+            className="absolute left-0 top-0 w-full bg-rose-500 transition-all duration-500"
+            style={{
+              height: `${(statusIndex / (statusSteps.length - 1)) * 100}%`,
+            }}
+          />
+        </div>
+
+        {/* Steps */}
+        <div className="space-y-8">
+          {statusSteps.map((step, index) => {
+            const isCompleted = index <= statusIndex
+            const isCurrent = index === statusIndex
+
+            return (
+              <div
+                key={step.status}
+                className={`relative flex items-start gap-4 ${
+                  isLoading ? "opacity-50" : ""
+                }`}
+              >
+                {/* Step Icon */}
+                <div
+                  className={`relative z-10 flex h-[50px] w-[50px] items-center justify-center rounded-full border-2 transition-colors ${
+                    isCompleted
+                      ? "border-rose-500 bg-rose-50 text-rose-500"
+                      : "border-gray-200 bg-white text-gray-400"
+                  }`}
+                >
+                  {step.icon}
+                </div>
+
+                {/* Step Content */}
+                <div className="flex-1 pt-3">
+                  <h3
+                    className={`font-medium ${
+                      isCompleted ? "text-gray-900" : "text-gray-500"
+                    }`}
+                  >
+                    {step.label}
+                  </h3>
+                  <p
+                    className={`mt-1 text-sm ${
+                      isCompleted ? "text-gray-600" : "text-gray-400"
+                    }`}
+                  >
+                    {step.description}
+                  </p>
+                  {isCurrent && (
+                    <span className="mt-2 inline-block text-sm text-rose-500">
+                      Current Status
+                    </span>
+                  )}
                 </div>
               </div>
-            </CardHeader>
-            
-            <CardContent className="pt-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium mb-2">Order Details</h3>
-                    <div className="text-sm space-y-1">
-                      <p>Order Date: {new Date(order.date).toLocaleDateString()}</p>
-                      <p>Total Amount: {order.total}</p>
-                      <p>Tracking Number: {order.trackingNumber}</p>
-                      <p>Estimated Delivery: {new Date(order.estimatedDelivery).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-medium mb-2">Items</h3>
-                  <div className="space-y-2">
-                    {order.items.map((item, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>{item.name} (x{item.quantity})</span>
-                        <span>{item.price}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 flex justify-end gap-4">
-                <button className="px-4 py-2 text-gray-600 hover:text-gray-900 transition">
-                  Need Help?
-                </button>
-                <button className="px-4 py-2 text-white rounded-full bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-600 hover:to-purple-700 transition">
-                  Track Order
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+            )
+          })}
+        </div>
+      </div>
+
+      {/* SMS Updates Option */}
+      <div className="mt-8 rounded-lg bg-gray-50 p-4">
+        <h3 className="font-medium mb-2">Get SMS Updates</h3>
+        <div className="flex gap-2">
+          <input
+            type="tel"
+            placeholder="Enter phone number"
+            className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+          />
+          <button className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors">
+            Subscribe
+          </button>
+        </div>
+        <p className="mt-2 text-sm text-gray-500">
+          Get real-time updates about your order status
+        </p>
       </div>
     </div>
-  );
-};
-
-export default OrderTracker;
+  )
+}

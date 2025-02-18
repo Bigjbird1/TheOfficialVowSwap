@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect } from "react"
 import { useCart } from "../contexts/CartContext"
 import { X } from "lucide-react"
-import { orderService } from "../services/OrderService"
+import { orderService, Order } from "../services/OrderService"
 import { useRouter } from "next/navigation"
 import ShippingForm from "./checkout/ShippingForm"
 import PaymentForm from "./checkout/PaymentForm"
-import ReviewSection from "./checkout/ReviewSection"
+import OrderSummary from "./checkout/OrderSummary"
+import OrderConfirmation from "./checkout/OrderConfirmation"
 import FocusLock from 'react-focus-lock'
 
 interface CheckoutProps {
@@ -15,7 +16,7 @@ interface CheckoutProps {
   onClose: () => void
 }
 
-type CheckoutStep = "shipping" | "payment" | "review"
+type CheckoutStep = "summary" | "shipping" | "payment" | "confirmation"
 
 interface ShippingInfo {
   fullName: string
@@ -36,7 +37,7 @@ interface PaymentInfo {
 export default function Checkout({ isOpen, onClose }: CheckoutProps) {
   const { items, total, clearCart } = useCart()
   const router = useRouter()
-  const [currentStep, setCurrentStep] = useState<CheckoutStep>("shipping")
+  const [currentStep, setCurrentStep] = useState<CheckoutStep>("summary")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
@@ -85,18 +86,40 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
     onClose()
   }
 
-  const handleShippingSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setCurrentStep("payment")
+  const [createdOrder, setCreatedOrder] = useState<Order | null>(null)
+  const [appliedDiscount, setAppliedDiscount] = useState<number>(0)
+
+  const handleApplyDiscount = async (code: string) => {
+    try {
+      const response = await fetch('/api/promotions/validate-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+
+      if (!response.ok) {
+        throw new Error('Invalid discount code');
+      }
+
+      const { discount } = await response.json();
+      setAppliedDiscount(discount);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  const handleProceedToShipping = () => {
+    setCurrentStep("shipping")
     setHasChanges(true)
   }
 
-  const handlePaymentSubmit = (e: React.FormEvent) => {
+  const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setCurrentStep("review")
+    setCurrentStep("payment")
   }
 
-  const handlePlaceOrder = async () => {
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setIsSubmitting(true)
     setError(null)
     
@@ -107,14 +130,9 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
         paymentInfo
       )
       
-      // Clear the cart
+      setCreatedOrder(order)
       clearCart()
-      
-      // Close the checkout modal
-      onClose()
-      
-      // Redirect to order details page
-      router.push(`/orders/${order.id}`)
+      setCurrentStep("confirmation")
     } catch (error) {
       console.error('Error placing order:', error)
       setError('Failed to place order. Please try again.')
@@ -164,6 +182,15 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
                 </div>
               )}
 
+              {currentStep === "summary" && (
+                <OrderSummary
+                  items={items}
+                  subtotal={total}
+                  onApplyDiscount={handleApplyDiscount}
+                  onProceedToPayment={handleProceedToShipping}
+                />
+              )}
+
               {currentStep === "shipping" && (
                 <ShippingForm
                   shippingInfo={shippingInfo}
@@ -186,13 +213,13 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
                 />
               )}
               
-              {currentStep === "review" && (
-                <ReviewSection
+              {currentStep === "confirmation" && createdOrder && (
+                <OrderConfirmation
+                  orderId={createdOrder.id}
                   items={items}
                   total={total}
                   shippingInfo={shippingInfo}
-                  paymentInfo={paymentInfo}
-                  onPlaceOrder={handlePlaceOrder}
+                  estimatedDelivery={createdOrder.estimatedDelivery}
                 />
               )}
             </div>
