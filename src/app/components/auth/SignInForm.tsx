@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { AuthError } from "@supabase/supabase-js";
+import AuthErrorAlert from "./AuthErrorAlert";
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
@@ -21,11 +22,20 @@ const handleAuthError = (error: AuthError) => {
 
 export default function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+
+  // Check for password reset success
+  useEffect(() => {
+    if (searchParams?.get("reset") === "success") {
+      setSuccessMessage("Your password has been successfully reset. Please sign in with your new password.");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,6 +48,7 @@ export default function SignInForm() {
     }
 
     setError(null);
+    setSuccessMessage(null);
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
@@ -82,51 +93,62 @@ export default function SignInForm() {
   };
 
   return (
-    <form className="mt-8 space-y-6 max-w-md mx-auto" onSubmit={handleSubmit}>
-      <div className="space-y-4">
-        <div className="relative">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email address
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            className="w-full px-4 py-3 border rounded-full bg-gray-50 placeholder-gray-500 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
-            placeholder="Email address"
-          />
-        </div>
-        <div className="relative">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type={passwordVisible ? "text" : "password"}
-            autoComplete="current-password"
-            required
-            className="w-full px-4 py-3 pr-10 border rounded-full bg-gray-50 placeholder-gray-500 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
-            placeholder="Password"
-          />
-          <button 
-            type="button"
-            onClick={() => setPasswordVisible(!passwordVisible)}
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500"
-            aria-label={passwordVisible ? "Hide password" : "Show password"}
-          >
-            {passwordVisible ? "🙈" : "👁️"}
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="text-red-500 text-sm text-center mt-2">{error}</div>
+    <div className="mt-8 max-w-md mx-auto">
+      {successMessage && (
+        <AuthErrorAlert message={successMessage} intent="success" className="mb-6" />
       )}
 
-      <div>
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="space-y-4">
+          <div className="relative">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email address
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className="w-full px-4 py-3 border rounded-full bg-gray-50 placeholder-gray-500 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+              placeholder="Email address"
+            />
+          </div>
+          <div className="relative">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type={passwordVisible ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              className="w-full px-4 py-3 pr-10 border rounded-full bg-gray-50 placeholder-gray-500 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+              placeholder="Password"
+            />
+            <button 
+              type="button"
+              onClick={() => setPasswordVisible(!passwordVisible)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500"
+              aria-label={passwordVisible ? "Hide password" : "Show password"}
+            >
+              {passwordVisible ? "🙈" : "👁️"}
+            </button>
+          </div>
+        </div>
+
+        {error && <AuthErrorAlert message={error} intent="error" />}
+
+        <div className="flex items-center justify-between">
+          <a
+            href="/auth/forgot-password"
+            className="text-sm font-medium text-rose-600 hover:text-rose-500"
+          >
+            Forgot your password?
+          </a>
+        </div>
+
         <button
           type="submit"
           disabled={isLoading}
@@ -135,7 +157,17 @@ export default function SignInForm() {
         >
           {isLoading ? "Signing in..." : "Sign in"}
         </button>
-      </div>
-    </form>
+
+        <p className="text-center text-sm text-gray-600">
+          Don't have an account?{" "}
+          <a
+            href="/auth/signup"
+            className="font-medium text-rose-600 hover:text-rose-500"
+          >
+            Sign up
+          </a>
+        </p>
+      </form>
+    </div>
   );
 }
