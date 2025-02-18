@@ -1,292 +1,230 @@
-"use client";
+                       "use client";
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import { Registry, RegistryItem } from '../types/registry';
 
-interface RegistryItem {
-  id: string;
-  productId: string;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    images: string[];
-    description: string;
-  };
-  quantity: number;
-  purchased: number;
-  priority: number;
-  addedAt: Date;
-  updatedAt: Date;
-}
+type RegistryState = {
+  registries: Registry[];
+  loading: boolean;
+  error: string | null;
+};
 
-interface Registry {
-  id: string;
-  title: string;
-  eventDate: Date;
-  description?: string;
-  isPublic: boolean;
-  shareableLink: string;
-  items: RegistryItem[];
-}
+type RegistryAction =
+  | { type: 'SET_REGISTRIES'; payload: Registry[] }
+  | { type: 'ADD_REGISTRY'; payload: Registry }
+  | { type: 'UPDATE_REGISTRY'; payload: Registry }
+  | { type: 'DELETE_REGISTRY'; payload: string }
+  | { type: 'ADD_ITEM'; payload: { registryId: string; item: RegistryItem } }
+  | { type: 'UPDATE_ITEM'; payload: { registryId: string; item: RegistryItem } }
+  | { type: 'REMOVE_ITEM'; payload: { registryId: string; itemId: string } }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null };
 
-interface RegistryContextType {
-  registry: Registry | null;
-  isLoading: boolean;
-  createRegistry: (data: { title: string; eventDate: Date; description?: string; isPublic?: boolean }) => Promise<void>;
-  updateRegistry: (data: { title?: string; eventDate?: Date; description?: string; isPublic?: boolean }) => Promise<void>;
-  addToRegistry: (productId: string, quantity: number, priority?: number) => Promise<void>;
-  removeFromRegistry: (productId: string) => Promise<void>;
-  updateRegistryItem: (productId: string, updates: { quantity?: number; priority?: number }) => Promise<void>;
-  isInRegistry: (productId: string) => boolean;
-}
+const initialState: RegistryState = {
+  registries: [],
+  loading: false,
+  error: null,
+};
+
+const registryReducer = (state: RegistryState, action: RegistryAction): RegistryState => {
+  switch (action.type) {
+    case 'SET_REGISTRIES':
+      return { ...state, registries: action.payload };
+    case 'ADD_REGISTRY':
+      return { ...state, registries: [...state.registries, action.payload] };
+    case 'UPDATE_REGISTRY':
+      return {
+        ...state,
+        registries: state.registries.map(registry =>
+          registry.id === action.payload.id ? action.payload : registry
+        ),
+      };
+    case 'DELETE_REGISTRY':
+      return {
+        ...state,
+        registries: state.registries.filter(registry => registry.id !== action.payload),
+      };
+    case 'ADD_ITEM':
+      return {
+        ...state,
+        registries: state.registries.map(registry =>
+          registry.id === action.payload.registryId
+            ? { ...registry, items: [...registry.items, action.payload.item] }
+            : registry
+        ),
+      };
+    case 'UPDATE_ITEM':
+      return {
+        ...state,
+        registries: state.registries.map(registry =>
+          registry.id === action.payload.registryId
+            ? {
+                ...registry,
+                items: registry.items.map(item =>
+                  item.id === action.payload.item.id ? action.payload.item : item
+                ),
+              }
+            : registry
+        ),
+      };
+    case 'REMOVE_ITEM':
+      return {
+        ...state,
+        registries: state.registries.map(registry =>
+          registry.id === action.payload.registryId
+            ? {
+                ...registry,
+                items: registry.items.filter(item => item.id !== action.payload.itemId),
+              }
+            : registry
+        ),
+      };
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    default:
+      return state;
+  }
+};
+
+type RegistryContextType = {
+  state: RegistryState;
+  createRegistry: (registry: Omit<Registry, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateRegistry: (registry: Registry) => Promise<void>;
+  deleteRegistry: (registryId: string) => Promise<void>;
+  addItem: (registryId: string, item: Omit<RegistryItem, 'id'>) => Promise<void>;
+  updateItem: (registryId: string, item: RegistryItem) => Promise<void>;
+  removeItem: (registryId: string, itemId: string) => Promise<void>;
+  generateShareLink: (registryId: string) => Promise<string>;
+};
 
 const RegistryContext = createContext<RegistryContextType | undefined>(undefined);
 
-export function RegistryProvider({ children }: { children: React.ReactNode }) {
-  const [registry, setRegistry] = useState<Registry | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { data: session } = useSession();
+export const RegistryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(registryReducer, initialState);
 
-  useEffect(() => {
-    if (session?.user?.role === 'CUSTOMER') {
-      fetchRegistry();
-    } else {
-      setRegistry(null);
-      setIsLoading(false);
-    }
-  }, [session]);
-
-  const fetchRegistry = async (retryCount = 0) => {
-    const MAX_RETRIES = 3;
-    const BASE_DELAY = 1000; // 1 second
-    
+  const createRegistry = useCallback(async (registry: Omit<Registry, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
-      const response = await fetch('/api/registry', {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      const newRegistry = {
+        ...registry,
+        id: Date.now().toString(), // Temporary ID generation
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      dispatch({ type: 'ADD_REGISTRY', payload: newRegistry });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to create registry' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, []);
 
-      // Check response content type
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: text
+  const updateRegistry = useCallback(async (registry: Registry) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      dispatch({ type: 'UPDATE_REGISTRY', payload: registry });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to update registry' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, []);
+
+  const deleteRegistry = useCallback(async (registryId: string) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      dispatch({ type: 'DELETE_REGISTRY', payload: registryId });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete registry' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, []);
+
+  const addItem = useCallback(async (registryId: string, item: Omit<RegistryItem, 'id'>) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      const newItem = {
+        ...item,
+        id: Date.now().toString(), // Temporary ID generation
+      };
+      dispatch({ type: 'ADD_ITEM', payload: { registryId, item: newItem } });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to add item' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, []);
+
+  const updateItem = useCallback(async (registryId: string, item: RegistryItem) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      dispatch({ type: 'UPDATE_ITEM', payload: { registryId, item } });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to update item' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, []);
+
+  const removeItem = useCallback(async (registryId: string, itemId: string) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      dispatch({ type: 'REMOVE_ITEM', payload: { registryId, itemId } });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to remove item' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, []);
+
+  const generateShareLink = useCallback(async (registryId: string) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here to generate a unique share link
+      const shareLink = `${window.location.origin}/registry/${registryId}`;
+      const updatedRegistry = state.registries.find(r => r.id === registryId);
+      if (updatedRegistry) {
+        dispatch({
+          type: 'UPDATE_REGISTRY',
+          payload: { ...updatedRegistry, shareLink },
         });
-        throw new Error('Server returned invalid response format');
       }
-
-      if (!response.ok) {
-        try {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to fetch registry');
-        } catch (jsonError) {
-          const text = await response.text();
-          console.error('Error parsing error response:', {
-            error: jsonError,
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries()),
-            body: text
-          });
-          throw new Error('Failed to fetch registry - invalid error format');
-        }
-      }
-      
-      try {
-        const text = await response.text();
-        // Validate JSON structure before parsing
-        if (!text.trim().startsWith('{') || !text.trim().endsWith('}')) {
-          console.error('Invalid JSON structure:', text);
-          throw new Error('Invalid JSON structure in response');
-        }
-        
-        const data = JSON.parse(text);
-        if (!data.registry) {
-          console.error('Missing registry in response:', data);
-          throw new Error('Response missing required registry data');
-        }
-        setRegistry(data.registry);
-      } catch (error) {
-        if (error instanceof Error) {
-          if (error.name === 'AbortError') {
-            console.error('Request timed out');
-          } else {
-            console.error('Error fetching registry:', error.message);
-          }
-        } else {
-          console.error('Unknown error occurred:', error);
-        }
-        
-        if (retryCount < MAX_RETRIES) {
-          const delay = BASE_DELAY * Math.pow(2, retryCount);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return fetchRegistry(retryCount + 1);
-        }
-        
-        // Set error state if all retries fail
-        setRegistry(null);
-        throw new Error('Failed to load registry after multiple attempts');
-      } finally {
-        setIsLoading(false);
-      }
+      return shareLink;
     } catch (error) {
-      console.error('Error in fetchRegistry:', error);
-      setRegistry(null);
-      throw error;
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to generate share link' });
+      return '';
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
+  }, [state.registries]);
+
+  const value = {
+    state,
+    createRegistry,
+    updateRegistry,
+    deleteRegistry,
+    addItem,
+    updateItem,
+    removeItem,
+    generateShareLink,
   };
 
-  const createRegistry = async (data: { title: string; eventDate: Date; description?: string; isPublic?: boolean }) => {
-    if (!session?.user) {
-      throw new Error('Must be logged in to create registry');
-    }
+  return <RegistryContext.Provider value={value}>{children}</RegistryContext.Provider>;
+};
 
-    try {
-      const response = await fetch('/api/registry', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) throw new Error('Failed to create registry');
-      
-      const newRegistry = await response.json();
-      setRegistry(newRegistry);
-    } catch (error) {
-      console.error('Error creating registry:', error);
-      throw error;
-    }
-  };
-
-  const updateRegistry = async (data: { title?: string; eventDate?: Date; description?: string; isPublic?: boolean }) => {
-    if (!session?.user || !registry) {
-      throw new Error('Must be logged in and have a registry to update');
-    }
-
-    try {
-      const response = await fetch('/api/registry', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) throw new Error('Failed to update registry');
-      
-      const updatedRegistry = await response.json();
-      setRegistry(updatedRegistry);
-    } catch (error) {
-      console.error('Error updating registry:', error);
-      throw error;
-    }
-  };
-
-  const addToRegistry = async (productId: string, quantity: number, priority: number = 0) => {
-    if (!session?.user || !registry) {
-      throw new Error('Must be logged in and have a registry to add items');
-    }
-
-    try {
-      const response = await fetch('/api/registry/items', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ productId, quantity, priority }),
-      });
-
-      if (!response.ok) throw new Error('Failed to add to registry');
-      
-      const updatedRegistry = await response.json();
-      setRegistry(updatedRegistry);
-    } catch (error) {
-      console.error('Error adding to registry:', error);
-      throw error;
-    }
-  };
-
-  const removeFromRegistry = async (productId: string) => {
-    if (!session?.user || !registry) {
-      throw new Error('Must be logged in and have a registry to remove items');
-    }
-
-    try {
-      const response = await fetch(`/api/registry/items/${productId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to remove from registry');
-      
-      const updatedRegistry = await response.json();
-      setRegistry(updatedRegistry);
-    } catch (error) {
-      console.error('Error removing from registry:', error);
-      throw error;
-    }
-  };
-
-  const updateRegistryItem = async (productId: string, updates: { quantity?: number; priority?: number }) => {
-    if (!session?.user || !registry) {
-      throw new Error('Must be logged in and have a registry to update items');
-    }
-
-    try {
-      const response = await fetch(`/api/registry/items/${productId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (!response.ok) throw new Error('Failed to update registry item');
-      
-      const updatedRegistry = await response.json();
-      setRegistry(updatedRegistry);
-    } catch (error) {
-      console.error('Error updating registry item:', error);
-      throw error;
-    }
-  };
-
-  const isInRegistry = (productId: string) => {
-    return registry?.items.some(item => item.productId === productId) ?? false;
-  };
-
-  return (
-    <RegistryContext.Provider
-      value={{
-        registry,
-        isLoading,
-        createRegistry,
-        updateRegistry,
-        addToRegistry,
-        removeFromRegistry,
-        updateRegistryItem,
-        isInRegistry,
-      }}
-    >
-      {children}
-    </RegistryContext.Provider>
-  );
-}
-
-export function useRegistry() {
+export const useRegistry = () => {
   const context = useContext(RegistryContext);
   if (context === undefined) {
     throw new Error('useRegistry must be used within a RegistryProvider');
   }
   return context;
-}
+};

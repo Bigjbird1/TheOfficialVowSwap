@@ -1,164 +1,199 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+"use client";
 
-interface WishlistItem {
-  id: string;
-  productId: string;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    images: string[];
-    description: string;
-  };
-  addedAt: Date;
-}
+import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import { Wishlist, WishlistItem } from '../types/registry';
 
-interface WishlistContextType {
-  items: WishlistItem[];
-  isLoading: boolean;
+type WishlistState = {
+  wishlist: Wishlist | null;
+  loading: boolean;
   error: string | null;
-  addToWishlist: (productId: string) => Promise<void>;
-  removeFromWishlist: (productId: string) => Promise<void>;
-  isInWishlist: (productId: string) => boolean;
-}
+};
+
+type WishlistAction =
+  | { type: 'SET_WISHLIST'; payload: Wishlist }
+  | { type: 'ADD_ITEM'; payload: WishlistItem }
+  | { type: 'UPDATE_ITEM'; payload: WishlistItem }
+  | { type: 'REMOVE_ITEM'; payload: string }
+  | { type: 'REORDER_ITEMS'; payload: WishlistItem[] }
+  | { type: 'TOGGLE_FAVORITE'; payload: string }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null };
+
+const initialState: WishlistState = {
+  wishlist: null,
+  loading: false,
+  error: null,
+};
+
+const wishlistReducer = (state: WishlistState, action: WishlistAction): WishlistState => {
+  switch (action.type) {
+    case 'SET_WISHLIST':
+      return { ...state, wishlist: action.payload };
+    case 'ADD_ITEM':
+      return {
+        ...state,
+        wishlist: state.wishlist
+          ? {
+              ...state.wishlist,
+              items: [...state.wishlist.items, action.payload],
+            }
+          : null,
+      };
+    case 'UPDATE_ITEM':
+      return {
+        ...state,
+        wishlist: state.wishlist
+          ? {
+              ...state.wishlist,
+              items: state.wishlist.items.map(item =>
+                item.id === action.payload.id ? action.payload : item
+              ),
+            }
+          : null,
+      };
+    case 'REMOVE_ITEM':
+      return {
+        ...state,
+        wishlist: state.wishlist
+          ? {
+              ...state.wishlist,
+              items: state.wishlist.items.filter(item => item.id !== action.payload),
+            }
+          : null,
+      };
+    case 'REORDER_ITEMS':
+      return {
+        ...state,
+        wishlist: state.wishlist
+          ? {
+              ...state.wishlist,
+              items: action.payload,
+            }
+          : null,
+      };
+    case 'TOGGLE_FAVORITE':
+      return {
+        ...state,
+        wishlist: state.wishlist
+          ? {
+              ...state.wishlist,
+              items: state.wishlist.items.map(item =>
+                item.id === action.payload
+                  ? { ...item, favorite: !item.favorite }
+                  : item
+              ),
+            }
+          : null,
+      };
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    default:
+      return state;
+  }
+};
+
+type WishlistContextType = {
+  state: WishlistState;
+  addItem: (item: Omit<WishlistItem, 'id' | 'position'>) => Promise<void>;
+  updateItem: (item: WishlistItem) => Promise<void>;
+  removeItem: (itemId: string) => Promise<void>;
+  reorderItems: (items: WishlistItem[]) => Promise<void>;
+  toggleFavorite: (itemId: string) => Promise<void>;
+};
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
-export function WishlistProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<WishlistItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { data: session } = useSession();
+export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(wishlistReducer, initialState);
 
-  useEffect(() => {
-    if (!session?.user) {
-      setItems([]);
-      setIsLoading(false);
-      return;
-    }
-
-    // Only fetch wishlist for customers
-    if (session.user.role === 'CUSTOMER') {
-      fetchWishlist();
-    } else {
-      // For non-customer roles (like sellers), set empty state without attempting to fetch
-      setItems([]);
-      setIsLoading(false);
-      setError(null);
-    }
-  }, [session]);
-
-  const fetchWishlist = async () => {
-    setError(null);
-    setIsLoading(true);
+  const addItem = useCallback(async (item: Omit<WishlistItem, 'id' | 'position'>) => {
     try {
-      const response = await fetch('/api/wishlist');
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
-        console.error('Wishlist fetch failed:', errorMessage);
-        setError(errorMessage);
-        setItems([]); // Fallback to empty wishlist
-        return;
-      }
-      const data = await response.json();
-      setItems(data.items || []);
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      const position = state.wishlist?.items.length ?? 0;
+      const newItem: WishlistItem = {
+        ...item,
+        id: Date.now().toString(), // Temporary ID generation
+        position,
+      };
+      dispatch({ type: 'ADD_ITEM', payload: newItem });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch wishlist';
-      console.error('Error fetching wishlist:', error);
-      setError(errorMessage);
-      setItems([]); // Fallback to empty wishlist
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to add item' });
     } finally {
-      setIsLoading(false);
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  }, [state.wishlist?.items.length]);
 
-  const addToWishlist = async (productId: string) => {
-    if (!session?.user) {
-      setError('Must be logged in to add to wishlist');
-      return;
-    }
-
-    setError(null);
+  const updateItem = useCallback(async (item: WishlistItem) => {
     try {
-      const response = await fetch('/api/wishlist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ productId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || `Failed to add item to wishlist (${response.status})`;
-        console.error('Add to wishlist failed:', errorMessage);
-        setError(errorMessage);
-        return;
-      }
-      
-      const newItem = await response.json();
-      setItems((prev) => [...prev, newItem]);
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      dispatch({ type: 'UPDATE_ITEM', payload: item });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to add to wishlist';
-      console.error('Error adding to wishlist:', error);
-      setError(errorMessage);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to update item' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  }, []);
 
-  const removeFromWishlist = async (productId: string) => {
-    if (!session?.user) {
-      setError('Must be logged in to remove from wishlist');
-      return;
-    }
-
-    setError(null);
+  const removeItem = useCallback(async (itemId: string) => {
     try {
-      const response = await fetch(`/api/wishlist/${productId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || `Failed to remove item from wishlist (${response.status})`;
-        console.error('Remove from wishlist failed:', errorMessage);
-        setError(errorMessage);
-        return;
-      }
-      
-      setItems((prev) => prev.filter(item => item.productId !== productId));
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      dispatch({ type: 'REMOVE_ITEM', payload: itemId });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to remove from wishlist';
-      console.error('Error removing from wishlist:', error);
-      setError(errorMessage);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to remove item' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
+  }, []);
+
+  const reorderItems = useCallback(async (items: WishlistItem[]) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      const reorderedItems = items.map((item, index) => ({
+        ...item,
+        position: index,
+      }));
+      dispatch({ type: 'REORDER_ITEMS', payload: reorderedItems });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to reorder items' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, []);
+
+  const toggleFavorite = useCallback(async (itemId: string) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // API call would go here
+      dispatch({ type: 'TOGGLE_FAVORITE', payload: itemId });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to toggle favorite' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, []);
+
+  const value = {
+    state,
+    addItem,
+    updateItem,
+    removeItem,
+    reorderItems,
+    toggleFavorite,
   };
 
-  const isInWishlist = (productId: string) => {
-    return items.some(item => item.productId === productId);
-  };
+  return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
+};
 
-  return (
-    <WishlistContext.Provider
-      value={{
-        items,
-        isLoading,
-        error,
-        addToWishlist,
-        removeFromWishlist,
-        isInWishlist,
-      }}
-    >
-      {children}
-    </WishlistContext.Provider>
-  );
-}
-
-export function useWishlist() {
+export const useWishlist = () => {
   const context = useContext(WishlistContext);
   if (context === undefined) {
     throw new Error('useWishlist must be used within a WishlistProvider');
   }
   return context;
-}
+};

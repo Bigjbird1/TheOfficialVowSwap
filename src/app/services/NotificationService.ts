@@ -10,7 +10,12 @@ export type NotificationType =
   | 'PRICE_CHANGE'
   | 'INVENTORY_ALERT'
   | 'REVIEW'
-  | 'BULK_REQUEST';
+  | 'BULK_REQUEST'
+  | 'REGISTRY_ITEM_ADDED'
+  | 'REGISTRY_ITEM_PURCHASED'
+  | 'REGISTRY_ITEM_RESERVED'
+  | 'REGISTRY_PRICE_CHANGE'
+  | 'REGISTRY_REMINDER';
 
 interface NotificationData {
   userId: string;
@@ -176,5 +181,65 @@ export class NotificationService {
     }));
 
     return this.createBulkNotifications(notifications);
+  }
+
+  // Registry-specific notification methods
+  static async sendRegistryItemAddedNotification(userId: string, registryId: string, itemName: string) {
+    return this.createNotification({
+      userId,
+      type: 'REGISTRY_ITEM_ADDED',
+      title: 'New Registry Item',
+      message: `${itemName} has been added to your registry`,
+      link: `/registry/${registryId}`,
+      data: { registryId, itemName },
+    });
+  }
+
+  static async sendRegistryItemPurchasedNotification(userId: string, registryId: string, itemName: string, purchasedBy: string) {
+    return this.createNotification({
+      userId,
+      type: 'REGISTRY_ITEM_PURCHASED',
+      title: 'Registry Item Purchased',
+      message: `${itemName} has been purchased from your registry by ${purchasedBy}`,
+      link: `/registry/${registryId}`,
+      data: { registryId, itemName, purchasedBy },
+    });
+  }
+
+  static async sendRegistryItemReservedNotification(userId: string, registryId: string, itemName: string, reservedBy: string) {
+    return this.createNotification({
+      userId,
+      type: 'REGISTRY_ITEM_RESERVED',
+      title: 'Registry Item Reserved',
+      message: `${itemName} has been reserved from your registry by ${reservedBy}`,
+      link: `/registry/${registryId}`,
+      data: { registryId, itemName, reservedBy },
+    });
+  }
+
+  static async sendRegistryPriceChangeNotification(userId: string, registryId: string, itemName: string, oldPrice: number, newPrice: number) {
+    const priceChange = newPrice - oldPrice;
+    const changeType = priceChange > 0 ? 'increased' : 'decreased';
+    const changeAmount = Math.abs(priceChange);
+
+    return this.createNotification({
+      userId,
+      type: 'REGISTRY_PRICE_CHANGE',
+      title: 'Registry Item Price Change',
+      message: `The price of ${itemName} has ${changeType} by $${changeAmount.toFixed(2)}`,
+      link: `/registry/${registryId}`,
+      data: { registryId, itemName, oldPrice, newPrice },
+    });
+  }
+
+  static async sendRegistryReminderNotification(userId: string, registryId: string, eventName: string, daysUntil: number) {
+    return this.createNotification({
+      userId,
+      type: 'REGISTRY_REMINDER',
+      title: 'Registry Event Reminder',
+      message: `Your ${eventName} is in ${daysUntil} days! Don't forget to review your registry.`,
+      link: `/registry/${registryId}`,
+      data: { registryId, eventName, daysUntil },
+    });
   }
 }
