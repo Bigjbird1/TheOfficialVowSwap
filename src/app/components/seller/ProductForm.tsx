@@ -26,6 +26,7 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
     quantity: initialData?.quantity || 0,
     tags: initialData?.tags || [],
     bulkDiscounts: initialData?.bulkDiscounts || [],
+    minBulkOrderQuantity: initialData?.minBulkOrderQuantity || 0,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,6 +175,21 @@ export default function ProductForm({ initialData, categories, onSubmit, onCance
       </div>
 
       <div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">Minimum Bulk Order Quantity</label>
+          <div className="mt-1">
+            <input
+              type="number"
+              value={formData.minBulkOrderQuantity}
+              onChange={e => setFormData(prev => ({ ...prev, minBulkOrderQuantity: parseInt(e.target.value) }))}
+              className={inputClasses}
+              min="0"
+              placeholder="Enter minimum quantity for bulk orders"
+            />
+            <p className="mt-1 text-sm text-gray-500">Set to 0 to disable bulk order requirement</p>
+          </div>
+        </div>
+
         <div className="flex justify-between items-center mb-2">
           <label className="block text-sm font-medium text-gray-700">Bulk Discounts</label>
           <button

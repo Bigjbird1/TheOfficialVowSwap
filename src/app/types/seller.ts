@@ -144,6 +144,7 @@ export type ProductFormData = {
   images: string[];
   quantity: number;
   tags: string[];
+  minBulkOrderQuantity: number;
   bulkDiscounts: Array<{
     minQuantity: number;
     discount: number;
