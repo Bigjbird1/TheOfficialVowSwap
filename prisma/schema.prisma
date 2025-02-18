@@ -45,11 +45,190 @@ model Message {
   product     Product?  @relation(fields: [productId], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
+  isReported  Boolean   @default(false)
+  isBlocked   Boolean   @default(false)
+  attachments MessageAttachment[]
+  
   @@index([senderId])
   @@index([receiverId])
   @@index([productId])
   @@index([createdAt])
 }
 
-[Previous schema content continues...]
+model MessageAttachment {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  fileUrl   String
+  fileName  String
+  fileType  String
+  fileSize  Int
+  createdAt DateTime @default(now())
+
+  @@index([messageId])
+}
+
+model TypingIndicator {
+  id         String   @id @default(cuid())
+  userId     String
+  receiverId String
+  isTyping   Boolean  @default(false)
+  lastTyped  DateTime @default(now())
+
+  @@unique([userId, receiverId])
+  @@index([userId])
+  @@index([receiverId])
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  messages    Message[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Seller {
+  id          String    @id @default(cuid())
+  storeName   String
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ContentReport {
+  id          String    @id @default(cuid())
+  reportedBy  User      @relation("ReportedBy", fields: [reporterId], references: [id])
+  reporterId  String
+  content     User      @relation("ReportedContent", fields: [contentId], references: [id])
+  contentId   String
+  reason      String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([reporterId])
+  @@index([contentId])
+}
+
+model ModerationEvent {
+  id          String    @id @default(cuid())
+  moderator   User      @relation("ModeratedBy", fields: [moderatorId], references: [id])
+  moderatorId String
+  action      String
+  createdAt   DateTime  @default(now())
+
+  @@index([moderatorId])
+}
+
+model ProductView {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model UserEngagement {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String    @unique
+  lastActive  DateTime  @default(now())
+  loginCount  Int       @default(0)
+
+  @@index([userId])
+}
+
+model ServiceBooking {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  status      BookingStatus @default(PENDING)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model BulkPurchaseRequest {
+  id          String    @id @default(cuid())
+  buyer       User      @relation("BuyerRequests", fields: [buyerId], references: [id])
+  buyerId     String
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([buyerId])
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  type        String
+  title       String
+  message     String
+  link        String?
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Registry {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  name        String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Order {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+  SELLER
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}

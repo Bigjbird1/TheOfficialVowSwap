@@ -1,103 +1,117 @@
-'use client';
+import { useEffect, useCallback, useState } from 'react';
+import { useSession } from 'next-auth/react';
 
-import { useEffect, useState } from 'react';
-import { requestNotificationPermission, onMessageListener, getFirebaseMessaging } from '@/lib/firebase';
-
-type NotificationPayload = {
-  notification?: {
-    title?: string;
-    body?: string;
-  };
-  data?: Record<string, string>;
+type NotificationPreferences = {
+  messages: boolean;
+  orderUpdates: boolean;
+  promotions: boolean;
 };
 
-export const usePushNotifications = () => {
-  const [token, setToken] = useState<string | null>(null);
-  const [notification, setNotification] = useState<NotificationPayload | null>(null);
-  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
+export function usePushNotifications() {
+  const { data: session } = useSession();
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [preferences, setPreferences] = useState<NotificationPreferences>({
+    messages: true,
+    orderUpdates: true,
+    promotions: true,
+  });
 
   useEffect(() => {
-    // Check if running in browser
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    // Check if notifications are supported
+    // Check if the browser supports notifications
     if (!('Notification' in window)) {
       console.log('This browser does not support notifications');
       return;
     }
 
-    // Check if Firebase is configured
-    const messaging = getFirebaseMessaging();
-    if (!messaging) {
-      console.log('Push notifications are not configured');
-      return;
-    }
-
     // Get current permission status
-    setPermissionStatus(Notification.permission);
+    setPermission(Notification.permission);
 
-    // Request permission and get token if granted
-    const setupNotifications = async () => {
-      try {
-        const messaging = getFirebaseMessaging();
-        if (!messaging) {
-          console.log('Push notifications are not available');
-          return;
-        }
-
-        const fcmToken = await requestNotificationPermission();
-        if (fcmToken) {
-          setToken(fcmToken);
-          // Here you would typically send this token to your backend
-          // await sendTokenToServer(fcmToken);
-        }
-      } catch (error) {
-        console.error('Failed to get notification token:', error);
-      }
-    };
-
-    if (permissionStatus === 'granted') {
-      setupNotifications();
+    // Load saved preferences from localStorage
+    const savedPrefs = localStorage.getItem('notificationPreferences');
+    if (savedPrefs) {
+      setPreferences(JSON.parse(savedPrefs));
     }
-  }, [permissionStatus]);
-
-  useEffect(() => {
-    // Set up foreground message handler only if Firebase is configured
-    const messaging = getFirebaseMessaging();
-    if (!messaging) {
-      return;
-    }
-
-    const unsubscribe = onMessageListener();
-    return () => {
-      unsubscribe();
-    };
   }, []);
 
-  const requestPermission = async () => {
+  const requestPermission = useCallback(async () => {
     try {
-      const permission = await Notification.requestPermission();
-      setPermissionStatus(permission);
-      
-      if (permission === 'granted') {
-        const fcmToken = await requestNotificationPermission();
-        if (fcmToken) {
-          setToken(fcmToken);
-          // Here you would typically send this token to your backend
-          // await sendTokenToServer(fcmToken);
-        }
-      }
+      const result = await Notification.requestPermission();
+      setPermission(result);
+      return result;
     } catch (error) {
-      console.error('Failed to request notification permission:', error);
+      console.error('Error requesting notification permission:', error);
+      return 'denied' as NotificationPermission;
     }
-  };
+  }, []);
+
+  const updatePreferences = useCallback((newPreferences: Partial<NotificationPreferences>) => {
+    setPreferences(prev => {
+      const updated = { ...prev, ...newPreferences };
+      localStorage.setItem('notificationPreferences', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const showNotification = useCallback(
+    async ({ title, body, icon, data }: { title: string; body: string; icon?: string; data?: any }) => {
+      // Check if notifications are enabled for this type
+      const type = data?.type || 'messages';
+      if (!preferences[type as keyof NotificationPreferences]) {
+        return;
+      }
+
+      // Request permission if not granted
+      if (permission === 'default') {
+        const newPermission = await requestPermission();
+        if (newPermission !== 'granted') return;
+      }
+
+      if (permission !== 'granted') return;
+
+      try {
+        const notification = new Notification(title, {
+          body,
+          icon: icon || '/notification-icon.png',
+          data,
+        });
+
+        notification.onclick = function(event) {
+          event.preventDefault();
+          if (data?.url) {
+            window.open(data.url, '_blank');
+          }
+          notification.close();
+        };
+      } catch (error) {
+        console.error('Error showing notification:', error);
+      }
+    },
+    [permission, preferences, requestPermission]
+  );
+
+  const registerServiceWorker = useCallback(async () => {
+    if ('serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.register('/service-worker.js');
+        console.log('ServiceWorker registration successful');
+        return registration;
+      } catch (error) {
+        console.error('ServiceWorker registration failed:', error);
+        return null;
+      }
+    }
+    return null;
+  }, []);
+
+  useEffect(() => {
+    registerServiceWorker();
+  }, [registerServiceWorker]);
 
   return {
-    token,
-    notification,
-    permissionStatus,
+    permission,
+    preferences,
     requestPermission,
+    updatePreferences,
+    showNotification,
   };
-};
+}

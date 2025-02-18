@@ -1,7 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useWebSocket } from '@/app/hooks/useWebSocket';
+import { usePushNotifications } from '@/app/hooks/usePushNotifications';
+import { Upload, MoreVertical, AlertTriangle, X } from 'lucide-react';
 
 type Message = {
   id: string;
@@ -13,6 +17,14 @@ type Message = {
   senderName: string;
   productId?: string;
   productName?: string;
+  isReported?: boolean;
+  isBlocked?: boolean;
+  attachments?: {
+    id: string;
+    fileUrl: string;
+    fileName: string;
+    fileType: string;
+  }[];
 };
 
 type Conversation = {
@@ -26,13 +38,40 @@ type Conversation = {
 };
 
 export default function MessagingSystem() {
+  const { data: session } = useSession();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const router = useRouter();
+
+  const { sendMessage, updateTypingStatus } = useWebSocket({
+    onMessage: (message) => {
+      if (message.receiverId === session?.user?.id) {
+        setMessages(prev => [...prev, message]);
+        showNotification({
+          title: `New message from ${message.senderName}`,
+          body: message.content,
+          data: {
+            type: 'messages',
+            url: `/messages/${message.senderId}`,
+          },
+        });
+      }
+    },
+    onTypingUpdate: ({ userId, isTyping }) => {
+      setTypingUsers(prev => ({ ...prev, [userId]: isTyping }));
+    },
+  });
+
+  const { showNotification } = usePushNotifications();
 
   useEffect(() => {
     fetchConversations();
@@ -88,18 +127,21 @@ export default function MessagingSystem() {
     }
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedConversation || !newMessage.trim()) return;
+    if (!selectedConversation || (!newMessage.trim() && selectedFiles.length === 0)) return;
 
     try {
+      const formData = new FormData();
+      formData.append('receiverId', selectedConversation);
+      formData.append('content', newMessage);
+      selectedFiles.forEach(file => {
+        formData.append('attachments', file);
+      });
+
       const response = await fetch('/api/seller/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          receiverId: selectedConversation,
-          content: newMessage,
-        }),
+        body: formData,
       });
 
       if (!response.ok) throw new Error('Failed to send message');
@@ -107,6 +149,8 @@ export default function MessagingSystem() {
       const data = await response.json();
       setMessages(prev => [...prev, data.message]);
       setNewMessage('');
+      setSelectedFiles([]);
+      sendMessage(data.message);
 
       // Update conversation list
       setConversations(prev =>
@@ -114,7 +158,7 @@ export default function MessagingSystem() {
           conv.userId === selectedConversation
             ? {
                 ...conv,
-                lastMessage: newMessage,
+                lastMessage: newMessage || 'Sent attachments',
                 lastMessageDate: new Date(),
               }
             : conv
@@ -122,6 +166,49 @@ export default function MessagingSystem() {
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message');
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles(prev => [...prev, ...files]);
+  };
+
+  const handleReportMessage = async (message: Message) => {
+    try {
+      await fetch(`/api/seller/messages/${message.id}/report`, {
+        method: 'POST',
+      });
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === message.id ? { ...m, isReported: true } : m
+        )
+      );
+      setShowReportModal(false);
+    } catch (error) {
+      console.error('Error reporting message:', error);
+    }
+  };
+
+  const handleBlockUser = async (userId: string) => {
+    try {
+      await fetch(`/api/seller/users/${userId}/block`, {
+        method: 'POST',
+      });
+      router.refresh();
+    } catch (error) {
+      console.error('Error blocking user:', error);
+    }
+  };
+
+  let typingTimeout: NodeJS.Timeout;
+  const handleTyping = () => {
+    if (selectedConversation) {
+      updateTypingStatus(selectedConversation, true);
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        updateTypingStatus(selectedConversation, false);
+      }, 1000);
     }
   };
 
@@ -187,62 +274,133 @@ export default function MessagingSystem() {
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="col-span-2 flex flex-col">
-          {selectedConversation ? (
-            <>
-              <div className="p-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {conversations.find(c => c.userId === selectedConversation)?.userName}
-                </h3>
-                {conversations.find(c => c.userId === selectedConversation)?.productName && (
-                  <p className="text-sm text-gray-500">
-                    Re: {conversations.find(c => c.userId === selectedConversation)?.productName}
-                  </p>
-                )}
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map(message => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.senderId === selectedConversation
-                        ? 'justify-start'
-                        : 'justify-end'
-                    }`}
-                  >
+          {/* Messages */}
+          <div className="col-span-2 flex flex-col">
+            {selectedConversation ? (
+              <>
+                <div className="p-4 border-b border-gray-200">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {conversations.find(c => c.userId === selectedConversation)?.userName}
+                      </h3>
+                      {conversations.find(c => c.userId === selectedConversation)?.productName && (
+                        <p className="text-sm text-gray-500">
+                          Re: {conversations.find(c => c.userId === selectedConversation)?.productName}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleBlockUser(selectedConversation)}
+                      className="p-2 text-gray-500 hover:text-gray-700"
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {messages.map(message => (
                     <div
-                      className={`rounded-lg px-4 py-2 max-w-[70%] ${
+                      key={message.id}
+                      className={`flex ${
                         message.senderId === selectedConversation
-                          ? 'bg-gray-100 text-gray-900'
-                          : 'bg-rose-500 text-white'
+                          ? 'justify-start'
+                          : 'justify-end'
                       }`}
                     >
-                      <p>{message.content}</p>
-                      <p className="text-xs mt-1 opacity-70">
-                        {new Date(message.createdAt).toLocaleTimeString()}
-                      </p>
+                      <div
+                        className={`rounded-lg px-4 py-2 max-w-[70%] relative group ${
+                          message.senderId === selectedConversation
+                            ? 'bg-gray-100 text-gray-900'
+                            : 'bg-rose-500 text-white'
+                        }`}
+                      >
+                        {message.senderId === selectedConversation && !message.isReported && (
+                          <button
+                            onClick={() => {
+                              setSelectedMessage(message);
+                              setShowReportModal(true);
+                            }}
+                            className="absolute -left-8 top-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <AlertTriangle className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                          </button>
+                        )}
+                        <p>{message.content}</p>
+                        {message.attachments?.map(attachment => (
+                          <div key={attachment.id} className="mt-2">
+                            <a
+                              href={attachment.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm underline"
+                            >
+                              {attachment.fileName}
+                            </a>
+                          </div>
+                        ))}
+                        <p className="text-xs mt-1 opacity-70">
+                          {new Date(message.createdAt).toLocaleTimeString()}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <form onSubmit={sendMessage} className="p-4 border-t border-gray-200">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={e => setNewMessage(e.target.value)}
-                    placeholder="Type your message..."
-                    className="flex-1 rounded-lg border-gray-200 focus:border-rose-500 focus:ring focus:ring-rose-500/20"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
-                  >
-                    Send
-                  </button>
+                  ))}
+                  {typingUsers[selectedConversation] && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 rounded-lg px-4 py-2">
+                        <span className="text-gray-500">Typing...</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </form>
+                <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={e => setNewMessage(e.target.value)}
+                      onKeyDown={handleTyping}
+                      placeholder="Type your message..."
+                      className="flex-1 rounded-lg border-gray-200 focus:border-rose-500 focus:ring focus:ring-rose-500/20"
+                    />
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      multiple
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-2 text-gray-500 hover:text-gray-700"
+                    >
+                      <Upload className="w-5 h-5" />
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+                    >
+                      Send
+                    </button>
+                  </div>
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="text-sm text-gray-600 flex items-center gap-2">
+                          <span>{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== index))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </form>
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500">
