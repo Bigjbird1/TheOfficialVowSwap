@@ -1,4 +1,4 @@
-export type RegistryItem = {
+    export type RegistryItem = {
   id: string;
   name: string;
   price: number;

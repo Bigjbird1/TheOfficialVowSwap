@@ -81,11 +81,31 @@ model TypingIndicator {
 }
 
 model Product {
-  id          String    @id @default(cuid())
-  name        String
-  messages    Message[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  name            String
+  description     String    @db.Text
+  price           Float
+  category        String
+  size            String?
+  color           String?
+  condition       String?
+  rating          Float     @default(0)
+  reviewCount     Int       @default(0)
+  stockStatus     String    @default("IN_STOCK")
+  images          Json[]    // Array of {id: string, url: string, alt: string}
+  specifications  Json      // Object of key-value pairs
+  shippingInfo    String
+  views           Int       @default(0)
+  seller          Seller    @relation(fields: [sellerId], references: [id])
+  sellerId        String
+  messages        Message[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([sellerId])
+  @@index([category])
+  @@index([rating])
+  @@index([views])
 }
 
 model Seller {
@@ -93,6 +113,7 @@ model Seller {
   storeName   String
   user        User      @relation(fields: [userId], references: [id])
   userId      String    @unique
+  products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }

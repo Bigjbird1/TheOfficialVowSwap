@@ -1,4 +1,4 @@
-                       "use client";
+                        "use client";
 
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import { Registry, RegistryItem } from '../types/registry';
