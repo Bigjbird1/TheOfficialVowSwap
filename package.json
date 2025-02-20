@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -23,6 +23,7 @@
     "validate:env": "node scripts/validate-env.js",
     "generate:icons": "node scripts/generate-pwa-icons.js",
     "predev": "prisma generate",
+    "prebuild": "npm run validate:env && npm run generate:icons && prisma generate && npm run test:ci",
     "prepare": "husky install",
     "security:audit": "npm audit --audit-level=high",
     "security:snyk": "snyk test",
